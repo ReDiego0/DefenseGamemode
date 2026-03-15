@@ -5,6 +5,7 @@ import org.bukkit.plugin.java.JavaPlugin
 
 class DefenseGamemode : JavaPlugin() {
 
+    // TODO: Strings en un yml.
     override fun onEnable() {
         logger.info("Iniciando DefenseGamemode...")
 
