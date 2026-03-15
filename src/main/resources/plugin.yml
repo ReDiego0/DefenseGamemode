@@ -1,0 +1,4 @@
+name: DefenseGamemode
+version: '1.0.0'
+main: org.ReDiego0.defenseGamemode.DefenseGamemode
+api-version: '1.21'
