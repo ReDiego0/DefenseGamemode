@@ -1,16 +1,21 @@
 package org.ReDiego0.defenseGamemode.config
 
+import org.ReDiego0.defenseGamemode.game.DifficultyProfile
 import org.bukkit.Location
 import org.bukkit.World
 import kotlin.random.Random
 
 data class MissionConfig(
     val id: String,
+    val displayName: String,
     val templateName: String,
     val maxPlayers: Int,
+    val baseDifficulty: Int,
+    val difficultyProfile: DifficultyProfile,
     val spawnLocation: CustomLocation,
     val spawnRadius: Double,
-    val targetLocation: CustomLocation
+    val targetLocation: CustomLocation,
+    val mobSpawns: List<CustomLocation>
 )
 
 data class CustomLocation(

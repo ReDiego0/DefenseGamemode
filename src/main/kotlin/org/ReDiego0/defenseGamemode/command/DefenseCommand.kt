@@ -2,6 +2,7 @@ package org.ReDiego0.defenseGamemode.command
 
 import org.ReDiego0.defenseGamemode.game.MatchmakingManager
 import org.ReDiego0.defenseGamemode.player.PartyManager
+import org.ReDiego0.defenseGamemode.setup.SetupManager
 import org.bukkit.Bukkit
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
@@ -22,9 +23,29 @@ class DefenseCommand : CommandExecutor, TabCompleter {
         when (subCommand) {
             "join" -> handleJoin(sender, args)
             "party" -> handleParty(sender, args)
+            "setup" -> handleSetup(sender, args)
             else -> sendHelp(sender)
         }
         return true
+    }
+
+    private fun handleSetup(sender: CommandSender, args: Array<out String>) {
+        if (sender !is Player) {
+            sender.sendMessage("§cSolo los jugadores pueden usar el modo setup.")
+            return
+        }
+
+        if (!sender.hasPermission("defense.setup")) {
+            sender.sendMessage("§cNo tienes permisos para usar esto.")
+            return
+        }
+
+        if (args.size < 3 || args[1].lowercase() != "start") {
+            sender.sendMessage("§cUso: /defense setup start <mapa>")
+            return
+        }
+
+        SetupManager.startSetup(sender, args[2])
     }
 
     private fun handleJoin(sender: CommandSender, args: Array<out String>) {
@@ -101,25 +122,39 @@ class DefenseCommand : CommandExecutor, TabCompleter {
         val completions = mutableListOf<String>()
 
         if (args.size == 1) {
-            listOf("join", "party").filter { it.startsWith(args[0].lowercase()) }.forEach { completions.add(it) }
+            val options = mutableListOf("join", "party")
+            if (sender.hasPermission("defense.setup")) options.add("setup")
+            options.filter { it.startsWith(args[0].lowercase()) }.forEach { completions.add(it) }
         } else if (args.size >= 2) {
             val subCommand = args[0].lowercase()
 
-            if (subCommand == "join") {
-                if (args.size == 2) {
-                    Bukkit.getOnlinePlayers().forEach { player ->
-                        if (player.name.lowercase().startsWith(args[1].lowercase())) completions.add(player.name)
+            when (subCommand) {
+                "join" -> {
+                    if (args.size == 2) {
+                        Bukkit.getOnlinePlayers().forEach { player ->
+                            if (player.name.lowercase().startsWith(args[1].lowercase())) completions.add(player.name)
+                        }
+                        completions.add("<mapa>")
+                    } else if (args.size == 3) {
+                        completions.add("<mapa>")
                     }
-                    completions.add("<mapa>")
-                } else if (args.size == 3) {
-                    completions.add("<mapa>")
                 }
-            } else if (subCommand == "party") {
-                if (args.size == 2) {
-                    listOf("invite", "accept", "leave", "kick").filter { it.startsWith(args[1].lowercase()) }.forEach { completions.add(it) }
-                } else if (args.size == 3 && (args[1].lowercase() == "invite" || args[1].lowercase() == "kick")) {
-                    Bukkit.getOnlinePlayers().forEach { player ->
-                        if (player.name.lowercase().startsWith(args[2].lowercase())) completions.add(player.name)
+                "party" -> {
+                    if (args.size == 2) {
+                        listOf("invite", "accept", "leave", "kick").filter { it.startsWith(args[1].lowercase()) }.forEach { completions.add(it) }
+                    } else if (args.size == 3 && (args[1].lowercase() == "invite" || args[1].lowercase() == "kick")) {
+                        Bukkit.getOnlinePlayers().forEach { player ->
+                            if (player.name.lowercase().startsWith(args[2].lowercase())) completions.add(player.name)
+                        }
+                    }
+                }
+                "setup" -> {
+                    if (sender.hasPermission("defense.setup")) {
+                        if (args.size == 2) {
+                            if ("start".startsWith(args[1].lowercase())) completions.add("start")
+                        } else if (args.size == 3 && args[1].lowercase() == "start") {
+                            completions.add("<mapa>")
+                        }
                     }
                 }
             }

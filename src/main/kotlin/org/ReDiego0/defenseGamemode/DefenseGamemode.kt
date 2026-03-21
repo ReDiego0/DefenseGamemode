@@ -2,6 +2,7 @@ package org.ReDiego0.defenseGamemode
 
 import org.ReDiego0.defenseGamemode.command.DefenseCommand
 import org.ReDiego0.defenseGamemode.config.MissionManager
+import org.ReDiego0.defenseGamemode.setup.SetupListener
 import org.ReDiego0.defenseGamemode.world.LocalWorldService
 import org.bukkit.plugin.java.JavaPlugin
 
@@ -16,6 +17,7 @@ class DefenseGamemode : JavaPlugin() {
         instance = this
 
         loadManagers()
+        loadEvents()
         loadCommands()
 
         LocalWorldService.initialize(this)
@@ -34,7 +36,7 @@ class DefenseGamemode : JavaPlugin() {
     }
 
     fun loadEvents() {
-        null
+        server.pluginManager.registerEvents(SetupListener(), this)
     }
 
     fun loadManagers() {

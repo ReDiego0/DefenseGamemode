@@ -51,4 +51,9 @@ class Match(
             changeState(MatchState.ENDING)
         }
     }
+
+    fun getMobSpawns(): List<org.bukkit.Location> {
+        val config = org.ReDiego0.defenseGamemode.config.MissionManager.getMission(mapName) ?: return emptyList()
+        return config.mobSpawns.map { it.toBukkitLocation(world) }
+    }
 }
