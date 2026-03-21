@@ -36,6 +36,8 @@ class Match(
         }
     }
 
+    fun getAvailableSlots(): Int = maxPlayers - players.size
+
     fun addPlayer(player: Player): Boolean {
         if (state != MatchState.WAITING || players.size >= maxPlayers) return false
         players.add(player.uniqueId)

@@ -22,11 +22,11 @@ object GameManager {
         return matches.values.firstOrNull { it.players.contains(playerUuid) }
     }
 
-    fun getAvailableMatch(mapName: String): Match? {
+    fun getAvailableMatch(mapName: String, requiredSlots: Int): Match? {
         return matches.values.firstOrNull {
             it.mapName == mapName &&
                     it.state == MatchState.WAITING &&
-                    it.players.size < it.maxPlayers
+                    it.getAvailableSlots() >= requiredSlots
         }
     }
 
