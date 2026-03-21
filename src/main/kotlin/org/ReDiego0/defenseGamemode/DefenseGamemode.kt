@@ -13,6 +13,7 @@ class DefenseGamemode : JavaPlugin() {
 
     override fun onEnable() {
         logger.info("Iniciando DefenseGamemode...")
+        instance = this
 
         loadManagers()
         loadCommands()
