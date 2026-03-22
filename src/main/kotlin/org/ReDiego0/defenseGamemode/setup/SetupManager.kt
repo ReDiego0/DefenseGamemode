@@ -4,6 +4,7 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextDecoration
 import org.ReDiego0.defenseGamemode.DefenseGamemode
 import org.ReDiego0.defenseGamemode.config.MissionManager
+import org.ReDiego0.defenseGamemode.world.LocalWorldService
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
@@ -19,16 +20,32 @@ object SetupManager {
             return
         }
 
-        val session = SetupSession(
-            mapName,
-            player.inventory.contents.clone(),
-            player.inventory.armorContents.clone()
-        )
-        sessions[player.uniqueId] = session
+        player.sendMessage("§ePreparando el mundo de setup para §b$mapName§e. Por favor, espera...")
 
-        player.inventory.clear()
-        giveSetupItems(player)
-        player.sendMessage("§aModo setup iniciado para el mapa §b$mapName§a.")
+        LocalWorldService.loadSetupWorldAsync(mapName).thenAccept { world ->
+            if (world == null) {
+                player.sendMessage("§cError: No se encontró la plantilla '$mapName' en la carpeta plugins/DefenseGamemode/templates/.")
+                return@thenAccept
+            }
+
+            val session = SetupSession(
+                mapName,
+                player.inventory.contents.clone(),
+                player.inventory.armorContents.clone(),
+                player.location.clone()
+            )
+            sessions[player.uniqueId] = session
+
+            player.teleportAsync(world.spawnLocation).thenAccept {
+                player.inventory.clear()
+                giveSetupItems(player)
+                player.sendMessage("§aModo setup iniciado. Has sido teletransportado a la plantilla §b$mapName§a.")
+            }
+        }.exceptionally { ex ->
+            player.sendMessage("§cOcurrió un error al cargar el mundo de setup.")
+            ex.printStackTrace()
+            null
+        }
     }
 
     fun endSetup(player: Player, save: Boolean = false) {
@@ -37,11 +54,15 @@ object SetupManager {
         player.inventory.contents = session.originalInventory
         player.inventory.armorContents = session.originalArmor
 
-        if (save) {
-            MissionManager.saveSetupSession(DefenseGamemode.instance, session)
-            player.sendMessage("§a¡Setup validado y guardado correctamente! Misión lista.")
-        } else {
-            player.sendMessage("§cSetup cancelado. Inventario restaurado.")
+        player.teleportAsync(session.previousLocation).thenAccept {
+            LocalWorldService.unloadSetupWorld(session.mapName)
+
+            if (save) {
+                MissionManager.saveSetupSession(DefenseGamemode.instance, session)
+                player.sendMessage("§a¡Setup validado y guardado correctamente! Misión lista.")
+            } else {
+                player.sendMessage("§cSetup cancelado. Inventario restaurado y devuelto a tu ubicación original.")
+            }
         }
     }
 

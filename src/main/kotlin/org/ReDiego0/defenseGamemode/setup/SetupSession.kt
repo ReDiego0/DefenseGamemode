@@ -12,7 +12,8 @@ enum class ChatPhase {
 data class SetupSession(
     val mapName: String,
     val originalInventory: Array<ItemStack?>,
-    val originalArmor: Array<ItemStack?>
+    val originalArmor: Array<ItemStack?>,
+    val previousLocation: Location
 ) {
     var playerSpawn: Location? = null
     var targetSpawn: Location? = null
@@ -37,6 +38,7 @@ data class SetupSession(
         if (mapName != other.mapName) return false
         if (!originalInventory.contentEquals(other.originalInventory)) return false
         if (!originalArmor.contentEquals(other.originalArmor)) return false
+        if (previousLocation != other.previousLocation) return false
         if (playerSpawn != other.playerSpawn) return false
         if (targetSpawn != other.targetSpawn) return false
         if (mobSpawns != other.mobSpawns) return false
@@ -48,6 +50,7 @@ data class SetupSession(
         var result = mapName.hashCode()
         result = 31 * result + originalInventory.contentHashCode()
         result = 31 * result + originalArmor.contentHashCode()
+        result = 31 * result + previousLocation.hashCode()
         result = 31 * result + (playerSpawn?.hashCode() ?: 0)
         result = 31 * result + (targetSpawn?.hashCode() ?: 0)
         result = 31 * result + mobSpawns.hashCode()
