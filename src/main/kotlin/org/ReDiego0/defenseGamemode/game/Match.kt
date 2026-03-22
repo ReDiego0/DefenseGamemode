@@ -16,7 +16,8 @@ class Match(
     val matchId: String,
     val mapName: String,
     val world: World,
-    val maxPlayers: Int
+    val maxPlayers: Int,
+    initialPlayers: List<UUID>
 ) {
     var state: MatchState = MatchState.WAITING
         private set
@@ -39,6 +40,14 @@ class Match(
 
     private var groupLives = config?.livesCount ?: 3
     private val individualLives = mutableMapOf<UUID, Int>()
+
+    init {
+        initialPlayers.forEach { uuid ->
+            players.add(uuid)
+            individualLives[uuid] = config?.livesCount ?: 3
+        }
+        changeState(MatchState.PREPARATION)
+    }
 
     fun changeState(newState: MatchState) {
         if (state == MatchState.ENDING) return
@@ -149,19 +158,6 @@ class Match(
 
     fun broadcast(message: String) {
         players.mapNotNull { Bukkit.getPlayer(it) }.forEach { it.sendMessage(message) }
-    }
-
-    fun getAvailableSlots(): Int = maxPlayers - players.size
-
-    fun addPlayer(player: Player): Boolean {
-        if (state != MatchState.WAITING || players.size >= maxPlayers) return false
-        players.add(player.uniqueId)
-        individualLives[player.uniqueId] = config?.livesCount ?: 3
-
-        if (players.size == maxPlayers) {
-            changeState(MatchState.PREPARATION)
-        }
-        return true
     }
 
     fun removePlayer(player: Player) {

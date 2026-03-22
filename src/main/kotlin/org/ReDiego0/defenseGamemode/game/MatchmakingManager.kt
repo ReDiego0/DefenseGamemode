@@ -1,5 +1,6 @@
 package org.ReDiego0.defenseGamemode.game
 
+import org.ReDiego0.defenseGamemode.DefenseGamemode
 import org.ReDiego0.defenseGamemode.config.MissionConfig
 import org.ReDiego0.defenseGamemode.config.MissionManager
 import org.ReDiego0.defenseGamemode.player.Party
@@ -7,8 +8,12 @@ import org.ReDiego0.defenseGamemode.player.PartyManager
 import org.ReDiego0.defenseGamemode.world.LocalWorldService
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
+import org.bukkit.scheduler.BukkitTask
+import java.util.UUID
 
 object MatchmakingManager {
+
+    private val activeQueues = mutableMapOf<String, LobbyQueue>()
 
     fun joinMap(player: Player, mapName: String) {
         val missionConfig = MissionManager.getMission(mapName)
@@ -36,53 +41,87 @@ object MatchmakingManager {
             return
         }
 
-        if (party.members.size == missionConfig.maxPlayers) {
-            player.sendMessage("§eParty completa. Saltando matchmaking y creando partida privada de §b$mapName§e...")
-            createAndJoinInstance(party, mapName, missionConfig)
+        val queue = activeQueues.getOrPut(mapName) { LobbyQueue(mapName, missionConfig) }
+
+        if (queue.isFull()) {
+            player.sendMessage("§cLa sala de espera para este mapa está llena. Intenta de nuevo en unos segundos.")
             return
         }
 
-        val availableMatch = GameManager.getAvailableMatch(mapName, party.members.size)
-        if (availableMatch != null) {
-            joinExistingMatch(party, availableMatch, missionConfig)
-            return
-        }
-
-        player.sendMessage("§eBuscando partidas... Creando una nueva instancia de §b$mapName§e para tu party.")
-        createAndJoinInstance(party, mapName, missionConfig)
+        queue.addParty(party)
     }
 
-    private fun createAndJoinInstance(party: Party, mapName: String, config: MissionConfig) {
-        LocalWorldService.createInstanceAsync(config.templateName).thenAccept { world ->
-            if (world == null) {
-                party.members.mapNotNull { Bukkit.getPlayer(it) }.forEach {
-                    it.sendMessage("§cError crítico: La plantilla '${config.templateName}' no existe.")
-                }
-                return@thenAccept
+    class LobbyQueue(val mapName: String, val config: MissionConfig) {
+        val waitingPlayers = mutableSetOf<UUID>()
+        private var task: BukkitTask? = null
+        private var countdown = 30
+
+        fun isFull(): Boolean = waitingPlayers.size >= config.maxPlayers
+
+        fun addParty(party: Party) {
+            waitingPlayers.addAll(party.members)
+            broadcast("§e${party.members.size} jugador(es) se unieron a la cola para §b$mapName§e. (${waitingPlayers.size}/${config.maxPlayers})")
+
+            if (waitingPlayers.size >= config.maxPlayers) {
+                countdown = 5
+                broadcast("§a¡Sala llena! Empezando en breve...")
             }
 
-            val newMatch = Match(
-                matchId = world.name,
-                mapName = mapName,
-                world = world,
-                maxPlayers = config.maxPlayers
-            )
-
-            GameManager.registerMatch(newMatch)
-            joinExistingMatch(party, newMatch, config)
-        }.exceptionally { ex ->
-            ex.printStackTrace()
-            null
+            if (task == null) {
+                startTimer()
+            }
         }
-    }
 
-    private fun joinExistingMatch(party: Party, match: Match, config: MissionConfig) {
-        party.members.mapNotNull { Bukkit.getPlayer(it) }.forEach { member ->
-            if (match.addPlayer(member)) {
-                val spawnLoc = config.spawnLocation.toRandomizedBukkitLocation(match.world, config.spawnRadius)
-                member.teleportAsync(spawnLoc).thenAccept {
-                    member.sendMessage("§a¡Te has unido a la partida en §b${match.mapName}§a!")
+        private fun startTimer() {
+            task = Bukkit.getScheduler().runTaskTimer(DefenseGamemode.instance, Runnable {
+                countdown--
+
+                if (countdown == 15 || countdown == 10 || (countdown <= 5 && countdown > 0)) {
+                    broadcast("§eIniciando misión en §b$countdown§e segundos...")
                 }
+
+                if (countdown <= 0) {
+                    task?.cancel()
+                    activeQueues.remove(mapName)
+                    createAndJoinInstance(waitingPlayers.toList())
+                }
+            }, 0L, 20L)
+        }
+
+        private fun broadcast(message: String) {
+            waitingPlayers.mapNotNull { Bukkit.getPlayer(it) }.forEach { it.sendMessage(message) }
+        }
+
+        private fun createAndJoinInstance(playersToJoin: List<UUID>) {
+            broadcast("§aCreando el mundo... Serás teletransportado en un instante.")
+
+            LocalWorldService.createInstanceAsync(config.templateName).thenAccept { world ->
+                if (world == null) {
+                    playersToJoin.mapNotNull { Bukkit.getPlayer(it) }.forEach {
+                        it.sendMessage("§cError crítico: La plantilla '${config.templateName}' no existe.")
+                    }
+                    return@thenAccept
+                }
+
+                val newMatch = Match(
+                    matchId = world.name,
+                    mapName = mapName,
+                    world = world,
+                    maxPlayers = config.maxPlayers,
+                    initialPlayers = playersToJoin
+                )
+
+                GameManager.registerMatch(newMatch)
+
+                playersToJoin.mapNotNull { Bukkit.getPlayer(it) }.forEach { member ->
+                    val spawnLoc = config.spawnLocation.toRandomizedBukkitLocation(world, config.spawnRadius)
+                    member.teleportAsync(spawnLoc).thenAccept {
+                        member.sendMessage("§a¡Misión iniciada!")
+                    }
+                }
+            }.exceptionally { ex ->
+                ex.printStackTrace()
+                null
             }
         }
     }
