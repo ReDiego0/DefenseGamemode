@@ -3,6 +3,7 @@ package org.ReDiego0.defenseGamemode
 import org.ReDiego0.defenseGamemode.command.DefenseCommand
 import org.ReDiego0.defenseGamemode.config.MissionManager
 import org.ReDiego0.defenseGamemode.config.MobManager
+import org.ReDiego0.defenseGamemode.game.MatchListener
 import org.ReDiego0.defenseGamemode.setup.SetupListener
 import org.ReDiego0.defenseGamemode.world.LocalWorldService
 import org.bukkit.plugin.java.JavaPlugin
@@ -16,12 +17,11 @@ class DefenseGamemode : JavaPlugin() {
     override fun onEnable() {
         logger.info("Iniciando DefenseGamemode...")
         instance = this
+        LocalWorldService.initialize(this)
 
         loadManagers()
         loadEvents()
         loadCommands()
-
-        LocalWorldService.initialize(this)
 
         logger.info("DefenseGamemode habilitado correctamente!")
     }
@@ -38,6 +38,7 @@ class DefenseGamemode : JavaPlugin() {
 
     fun loadEvents() {
         server.pluginManager.registerEvents(SetupListener(), this)
+        server.pluginManager.registerEvents(MatchListener(), this)
     }
 
     fun loadManagers() {

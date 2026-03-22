@@ -19,6 +19,8 @@ class WaveManager(
 ) {
     private var currentWave = 0
     private var aliveMobs = 0
+    private var totalMobsInWave = 0
+    private var waveBossBar: org.bukkit.boss.BossBar? = null
 
     fun startNextWave() {
         currentWave++
@@ -27,7 +29,23 @@ class WaveManager(
         val currentLevel = currentWave
         val currentTier = baseDifficulty + (currentWave / 5)
 
+        if (waveBossBar == null) {
+            waveBossBar = org.bukkit.Bukkit.createBossBar(
+                "§c⚔ Oleada $currentWave ⚔",
+                org.bukkit.boss.BarColor.RED,
+                org.bukkit.boss.BarStyle.SOLID
+            )
+        } else {
+            waveBossBar?.setTitle("§c⚔ Oleada $currentWave ⚔")
+        }
+
+        match.players.mapNotNull { org.bukkit.Bukkit.getPlayer(it) }.forEach { player ->
+            waveBossBar?.addPlayer(player)
+        }
+        waveBossBar?.progress = 1.0
+
         spawnWave(currentLevel, currentTier)
+        totalMobsInWave = aliveMobs
     }
 
     private fun spawnWave(level: Int, maxTier: Int) {
@@ -109,7 +127,10 @@ class WaveManager(
 
     fun handleMobDeath() {
         aliveMobs--
+        updateBossBar()
+
         if (aliveMobs <= 0) {
+            hideBossBar()
             val wavesPerRot = match.config?.wavesPerRotation ?: 5
 
             if (currentWave % wavesPerRot == 0) {
@@ -132,5 +153,21 @@ class WaveManager(
                 entity.isGlowing = true
             }
         }
+    }
+
+    private fun updateBossBar() {
+        if (totalMobsInWave == 0) return
+        val progress = (aliveMobs.toDouble() / totalMobsInWave.toDouble()).coerceIn(0.0, 1.0)
+        waveBossBar?.progress = progress
+
+        when {
+            progress > 0.5 -> waveBossBar?.color = org.bukkit.boss.BarColor.RED
+            progress > 0.2 -> waveBossBar?.color = org.bukkit.boss.BarColor.YELLOW
+            else -> waveBossBar?.color = org.bukkit.boss.BarColor.GREEN
+        }
+    }
+
+    fun hideBossBar() {
+        waveBossBar?.removeAll()
     }
 }

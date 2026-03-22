@@ -31,6 +31,10 @@ class MatchListener : Listener {
                 if (damageable.health - event.finalDamage <= 0) {
                     event.isCancelled = true
                     match.handleObjectiveDeath()
+                } else {
+                    org.bukkit.Bukkit.getScheduler().runTaskLater(org.ReDiego0.defenseGamemode.DefenseGamemode.instance, Runnable {
+                        match.objective?.updateHealthDisplay()
+                    }, 1L)
                 }
             }
         }

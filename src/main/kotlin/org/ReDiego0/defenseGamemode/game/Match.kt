@@ -113,6 +113,7 @@ class Match(
             }
             MatchState.ENDING -> {
                 broadcast("§cFinalizando partida...")
+                waveManager?.hideBossBar()
                 matchTask?.cancel()
                 objective?.cleanUp()
 

@@ -82,11 +82,8 @@ class DefenseObjective(
     }
 
     private fun setupHologram(mob: Mob) {
-        val customName = Component.text()
-            .append(Component.text("✦ OBJETIVO ✦", NamedTextColor.AQUA, TextDecoration.BOLD))
-            .build()
-        mob.customName(customName)
         mob.isCustomNameVisible = true
+        updateHealthDisplay()
     }
 
     fun healEndOfWave() {
@@ -97,10 +94,38 @@ class DefenseObjective(
         val healAmount = maxHealth * healPercentagePerWave
 
         currentMob.health = (currentMob.health + healAmount).coerceAtMost(maxHealth)
+        updateHealthDisplay()
     }
 
     fun cleanUp() {
         aiTask?.cancel()
         entity?.remove()
+    }
+
+    fun updateHealthDisplay() {
+        val currentMob = entity ?: return
+        if (currentMob.isDead) return
+
+        val maxHealth = currentMob.getAttribute(Attribute.MAX_HEALTH)?.value ?: 50.0
+        val currentHealth = currentMob.health
+
+        val percentage = (currentHealth / maxHealth) * 100
+        val color = when {
+            percentage > 70 -> NamedTextColor.GREEN
+            percentage > 30 -> NamedTextColor.YELLOW
+            else -> NamedTextColor.RED
+        }
+
+        val totalBars = 10
+        val activeBars = ((currentHealth / maxHealth) * totalBars).toInt().coerceIn(0, totalBars)
+        val barString = "█".repeat(activeBars) + "░".repeat(totalBars - activeBars)
+
+        val customName = Component.text()
+            .append(Component.text("✦ OBJETIVO ✦ ", NamedTextColor.AQUA, TextDecoration.BOLD))
+            .append(Component.text(String.format("%.0f%% ", percentage), color))
+            .append(Component.text("[$barString]", color))
+            .build()
+
+        currentMob.customName(customName)
     }
 }
