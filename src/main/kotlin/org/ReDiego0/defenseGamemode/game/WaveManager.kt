@@ -18,8 +18,8 @@ class WaveManager(
     private val difficultyProfile: DifficultyProfile
 ) {
     private var currentWave = 0
-    private var aliveMobs = 0
-    private var totalMobsInWave = 0
+    private var targetKills = 0
+    private var currentKills = 0
     private var waveBossBar: org.bukkit.boss.BossBar? = null
 
     fun startNextWave() {
@@ -45,7 +45,6 @@ class WaveManager(
         waveBossBar?.progress = 1.0
 
         spawnWave(currentLevel, currentTier)
-        totalMobsInWave = aliveMobs
     }
 
     private fun spawnWave(level: Int, maxTier: Int) {
@@ -60,13 +59,21 @@ class WaveManager(
             Pair(mob, effectiveWeight)
         }
 
-        val mobsToSpawn = 10 + (currentWave * 2) + (match.players.size * 5)
+        targetKills = 10 + (currentWave * 2) + (match.players.size * 5)
+
+        val mobsToSpawn = (targetKills * 1.3).toInt()
+        currentKills = 0
+
         val spawns = match.getMobSpawns()
         if (spawns.isEmpty()) return
 
         for (i in 0 until mobsToSpawn) {
             val selectedMob = getRandomWeightedMob(weightedMobs) ?: continue
-            val spawnLoc = spawns.random()
+            val baseLoc = spawns.random()
+
+            val offsetX = Random.nextDouble(-2.0, 2.0)
+            val offsetZ = Random.nextDouble(-2.0, 2.0)
+            val spawnLoc = baseLoc.clone().add(offsetX, 0.0, offsetZ)
 
             spawnEntity(selectedMob, spawnLoc, level)
         }
@@ -94,7 +101,6 @@ class WaveManager(
             applyLevelScaling(entity, level)
             setupHologram(entity, mobEntry.id, level)
 
-            aliveMobs++
         } catch (e: IllegalArgumentException) {
             println("Pendiente: Integrar MythicMobs/LevelledMobs para el id ${mobEntry.id}")
         }
@@ -126,23 +132,14 @@ class WaveManager(
     }
 
     fun handleMobDeath() {
-        aliveMobs--
+        currentKills++
         updateBossBar()
 
-        if (aliveMobs <= 0) {
-            hideBossBar()
-            val wavesPerRot = match.config?.wavesPerRotation ?: 5
+        val remaining = targetKills - currentKills
 
-            if (currentWave % wavesPerRot == 0) {
-                match.changeState(MatchState.VOTING)
-            } else {
-                org.bukkit.Bukkit.getScheduler().runTaskLater(org.ReDiego0.defenseGamemode.DefenseGamemode.instance, Runnable {
-                    if (match.state == MatchState.ACTIVE_WAVE) {
-                        match.changeState(MatchState.ACTIVE_WAVE)
-                    }
-                }, 60L)
-            }
-        } else if (aliveMobs <= 3) {
+        if (remaining <= 0) {
+            finishWave()
+        } else if (remaining <= 3) {
             highlightRemainingMobs()
         }
     }
@@ -156,8 +153,10 @@ class WaveManager(
     }
 
     private fun updateBossBar() {
-        if (totalMobsInWave == 0) return
-        val progress = (aliveMobs.toDouble() / totalMobsInWave.toDouble()).coerceIn(0.0, 1.0)
+        if (targetKills == 0) return
+        val remaining = targetKills - currentKills
+
+        val progress = (remaining.toDouble() / targetKills.toDouble()).coerceIn(0.0, 1.0)
         waveBossBar?.progress = progress
 
         when {
@@ -169,5 +168,31 @@ class WaveManager(
 
     fun hideBossBar() {
         waveBossBar?.removeAll()
+    }
+
+    private fun finishWave() {
+        hideBossBar()
+        clearRemainingMobs()
+
+        val wavesPerRot = match.config?.wavesPerRotation ?: 5
+
+        if (currentWave % wavesPerRot == 0) {
+            match.changeState(MatchState.VOTING)
+        } else {
+            org.bukkit.Bukkit.getScheduler().runTaskLater(org.ReDiego0.defenseGamemode.DefenseGamemode.instance, Runnable {
+                if (match.state == MatchState.ACTIVE_WAVE) {
+                    match.changeState(MatchState.ACTIVE_WAVE)
+                }
+            }, 60L)
+        }
+    }
+
+    private fun clearRemainingMobs() {
+        match.world.livingEntities.forEach { entity ->
+            if (entity !is Player && entity != match.objective?.entity) {
+                entity.world.spawnParticle(org.bukkit.Particle.CLOUD, entity.location, 10, 0.5, 0.5, 0.5, 0.1)
+                entity.remove()
+            }
+        }
     }
 }
