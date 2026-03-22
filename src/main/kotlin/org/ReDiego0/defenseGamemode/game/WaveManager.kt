@@ -110,7 +110,17 @@ class WaveManager(
     fun handleMobDeath() {
         aliveMobs--
         if (aliveMobs <= 0) {
-            match.changeState(MatchState.VOTING)
+            val wavesPerRot = match.config?.wavesPerRotation ?: 5
+
+            if (currentWave % wavesPerRot == 0) {
+                match.changeState(MatchState.VOTING)
+            } else {
+                org.bukkit.Bukkit.getScheduler().runTaskLater(org.ReDiego0.defenseGamemode.DefenseGamemode.instance, Runnable {
+                    if (match.state == MatchState.ACTIVE_WAVE) {
+                        match.changeState(MatchState.ACTIVE_WAVE)
+                    }
+                }, 60L)
+            }
         } else if (aliveMobs <= 3) {
             highlightRemainingMobs()
         }

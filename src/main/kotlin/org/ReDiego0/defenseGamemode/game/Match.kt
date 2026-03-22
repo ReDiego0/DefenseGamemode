@@ -25,7 +25,8 @@ class Match(
     val deadPlayers = mutableSetOf<UUID>()
     var currentWave = 0
 
-    private val config = MissionManager.getMission(mapName)
+    val config = MissionManager.getMission(mapName)
+    val votes = mutableMapOf<UUID, Boolean>()
 
     var objective: DefenseObjective? = null
         private set
@@ -74,12 +75,17 @@ class Match(
                 }, 0L, 20L)
             }
             MatchState.ACTIVE_WAVE -> {
-                broadcast("§c¡Ronda $currentWave iniciada! ¡Defiende el objetivo!")
+                broadcast("§c¡Ronda ${currentWave + 1} iniciada! ¡Defiende el objetivo!")
                 waveManager?.startNextWave()
             }
             MatchState.VOTING -> {
                 objective?.healEndOfWave()
                 broadcast("§a¡Ronda superada! El objetivo ha recuperado vida.")
+
+                votes.clear()
+                players.mapNotNull { Bukkit.getPlayer(it) }.forEach { player ->
+                    org.ReDiego0.defenseGamemode.ui.VoteMenu.open(player, this)
+                }
 
                 countdown = 15
                 broadcast("§bFase de extracción. Tienes $countdown segundos para decidir.")
@@ -88,6 +94,9 @@ class Match(
                     countdown--
                     if (countdown == 5) {
                         broadcast("§c¡Las elecciones se han bloqueado!")
+                        players.mapNotNull { Bukkit.getPlayer(it) }.forEach { player ->
+                            player.closeInventory()
+                        }
                     }
                     if (countdown <= 0) {
                         processVotingResults()
@@ -111,7 +120,32 @@ class Match(
     }
 
     private fun processVotingResults() {
-        changeState(MatchState.ACTIVE_WAVE)
+        val toExtract = mutableListOf<Player>()
+
+        players.mapNotNull { Bukkit.getPlayer(it) }.forEach { player ->
+            val voteStay = votes[player.uniqueId] ?: true
+            if (!voteStay) {
+                toExtract.add(player)
+            } else {
+                player.sendMessage("§aHas decidido continuar defendiendo el objetivo.")
+            }
+        }
+
+        toExtract.forEach { player ->
+            player.sendMessage("§aTe has retirado con éxito. ¡Calculando recompensas...!")
+            val fallbackWorld = Bukkit.getWorlds().first()
+            player.teleportAsync(fallbackWorld.spawnLocation)
+            removePlayer(player)
+        }
+
+        if (state != MatchState.ENDING) {
+            broadcast("§eSiguiente oleada en breve...")
+            Bukkit.getScheduler().runTaskLater(DefenseGamemode.instance, Runnable {
+                if (state != MatchState.ENDING) {
+                    changeState(MatchState.ACTIVE_WAVE)
+                }
+            }, 60L)
+        }
     }
 
     fun broadcast(message: String) {

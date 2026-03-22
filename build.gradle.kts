@@ -18,7 +18,7 @@ repositories {
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    implementation("com.github.stefvanschie.inventoryframework:IF:9.0.3")
+    implementation("com.github.stefvanschie.inventoryframework:IF:0.11.6")
 }
 
 tasks {

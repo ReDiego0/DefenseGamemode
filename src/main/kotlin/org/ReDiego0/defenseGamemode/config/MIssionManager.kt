@@ -55,6 +55,7 @@ object MissionManager {
 
             val livesTypeString = config.getString("lives-type", "GROUP")?.uppercase() ?: "GROUP"
             val livesCountConfig = config.getInt("lives-count", 3)
+            val wavesPerRotationConfig = config.getInt("waves-per-rotation", 5)
 
             val mission = MissionConfig(
                 id = id,
@@ -68,7 +69,8 @@ object MissionManager {
                 targetLocation = CustomLocation(targetX, targetY, targetZ),
                 mobSpawns = mobSpawnsList,
                 livesType = try { LivesType.valueOf(livesTypeString) } catch (e: Exception) { LivesType.GROUP },
-                livesCount = livesCountConfig
+                livesCount = livesCountConfig,
+                wavesPerRotation = wavesPerRotationConfig
             )
 
             missions[id] = mission
@@ -99,6 +101,7 @@ object MissionManager {
         config.set("target.z", 10.0)
         config.set("lives-type", "GROUP")
         config.set("lives-count", 3)
+        config.set("waves-per-rotation", 5)
 
         val defaultMobSpawns = listOf(
             mapOf("x" to 20.0, "y" to 64.0, "z" to 20.0),
@@ -123,6 +126,7 @@ object MissionManager {
         config.set("difficulty-profile", "PROGRESSIVE_CAPPED")
         config.set("lives-type", "GROUP")
         config.set("lives-count", 3)
+        config.set("waves-per-rotation", 5)
 
         session.playerSpawn?.let { loc ->
             config.set("spawn.x", loc.x)

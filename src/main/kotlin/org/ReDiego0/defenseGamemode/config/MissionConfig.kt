@@ -19,6 +19,7 @@ data class MissionConfig(
     val difficultyProfile: DifficultyProfile,
     val livesType: LivesType,
     val livesCount: Int,
+    val wavesPerRotation: Int,
     val spawnLocation: CustomLocation,
     val spawnRadius: Double,
     val targetLocation: CustomLocation,
