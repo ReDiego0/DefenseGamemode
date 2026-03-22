@@ -53,6 +53,9 @@ object MissionManager {
                 CustomLocation(mx, my, mz)
             }
 
+            val livesTypeString = config.getString("lives-type", "GROUP")?.uppercase() ?: "GROUP"
+            val livesCountConfig = config.getInt("lives-count", 3)
+
             val mission = MissionConfig(
                 id = id,
                 displayName = displayName,
@@ -63,7 +66,9 @@ object MissionManager {
                 spawnLocation = CustomLocation(spawnX, spawnY, spawnZ, spawnYaw, spawnPitch),
                 spawnRadius = spawnRadius,
                 targetLocation = CustomLocation(targetX, targetY, targetZ),
-                mobSpawns = mobSpawnsList
+                mobSpawns = mobSpawnsList,
+                livesType = try { LivesType.valueOf(livesTypeString) } catch (e: Exception) { LivesType.GROUP },
+                livesCount = livesCountConfig
             )
 
             missions[id] = mission
@@ -92,6 +97,8 @@ object MissionManager {
         config.set("target.x", 10.0)
         config.set("target.y", 64.0)
         config.set("target.z", 10.0)
+        config.set("lives-type", "GROUP")
+        config.set("lives-count", 3)
 
         val defaultMobSpawns = listOf(
             mapOf("x" to 20.0, "y" to 64.0, "z" to 20.0),
@@ -114,6 +121,8 @@ object MissionManager {
         config.set("max-players", 4)
         config.set("base-difficulty", session.baseDifficulty)
         config.set("difficulty-profile", "PROGRESSIVE_CAPPED")
+        config.set("lives-type", "GROUP")
+        config.set("lives-count", 3)
 
         session.playerSpawn?.let { loc ->
             config.set("spawn.x", loc.x)

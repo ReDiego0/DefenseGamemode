@@ -5,8 +5,10 @@ import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
 import org.ReDiego0.defenseGamemode.config.MobEntry
 import org.bukkit.Location
+import org.bukkit.attribute.Attribute
 import org.bukkit.entity.EntityType
 import org.bukkit.entity.LivingEntity
+import org.bukkit.entity.Player
 import kotlin.random.Random
 
 class WaveManager(
@@ -81,13 +83,13 @@ class WaveManager(
     }
 
     private fun applyLevelScaling(entity: LivingEntity, level: Int) {
-        val baseHealth = entity.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH)?.baseValue ?: 20.0
+        val baseHealth = entity.getAttribute(Attribute.MAX_HEALTH)?.baseValue ?: 20.0
         val newHealth = baseHealth + (level * 2.0)
 
-        entity.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH)?.baseValue = newHealth
+        entity.getAttribute(Attribute.MAX_HEALTH)?.baseValue = newHealth
         entity.health = newHealth
 
-        val dmgAttr = entity.getAttribute(org.bukkit.attribute.Attribute.ATTACK_DAMAGE)
+        val dmgAttr = entity.getAttribute(Attribute.ATTACK_DAMAGE)
         if (dmgAttr != null) {
             dmgAttr.baseValue += (level * 0.5)
         }
@@ -103,5 +105,22 @@ class WaveManager(
 
         entity.customName(customName)
         entity.isCustomNameVisible = true
+    }
+
+    fun handleMobDeath() {
+        aliveMobs--
+        if (aliveMobs <= 0) {
+            match.changeState(MatchState.VOTING)
+        } else if (aliveMobs <= 3) {
+            highlightRemainingMobs()
+        }
+    }
+
+    private fun highlightRemainingMobs() {
+        match.world.livingEntities.forEach { entity ->
+            if (entity !is Player && entity != match.objective?.entity) {
+                entity.isGlowing = true
+            }
+        }
     }
 }

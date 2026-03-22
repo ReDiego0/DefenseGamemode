@@ -1,8 +1,15 @@
 package org.ReDiego0.defenseGamemode.game
 
-import org.bukkit.World
-import org.bukkit.entity.Player
+import org.ReDiego0.defenseGamemode.DefenseGamemode
+import org.ReDiego0.defenseGamemode.config.LivesType
+import org.ReDiego0.defenseGamemode.config.MissionManager
 import org.ReDiego0.defenseGamemode.world.LocalWorldService
+import org.bukkit.Bukkit
+import org.bukkit.GameMode
+import org.bukkit.World
+import org.bukkit.attribute.Attribute
+import org.bukkit.entity.Player
+import org.bukkit.scheduler.BukkitTask
 import java.util.UUID
 
 class Match(
@@ -18,22 +25,97 @@ class Match(
     val deadPlayers = mutableSetOf<UUID>()
     var currentWave = 0
 
+    private val config = MissionManager.getMission(mapName)
+
+    var objective: DefenseObjective? = null
+        private set
+
+    var waveManager: WaveManager? = null
+        private set
+
+    private var matchTask: BukkitTask? = null
+    private var countdown = 0
+
+    private var groupLives = config?.livesCount ?: 3
+    private val individualLives = mutableMapOf<UUID, Int>()
+
     fun changeState(newState: MatchState) {
+        if (state == MatchState.ENDING) return
         state = newState
         handleStateTransition()
     }
 
     private fun handleStateTransition() {
+        matchTask?.cancel()
+
         when (state) {
             MatchState.WAITING -> { }
-            MatchState.PREPARATION -> { }
-            MatchState.ACTIVE_WAVE -> { }
-            MatchState.VOTING -> { }
+            MatchState.PREPARATION -> {
+                if (config == null) {
+                    changeState(MatchState.ENDING)
+                    return
+                }
+
+                objective = DefenseObjective(this, config)
+                objective?.spawn()
+
+                waveManager = WaveManager(this, config.baseDifficulty, "vanilla", config.difficultyProfile)
+
+                countdown = 15
+                broadcast("§e¡La partida comienza en $countdown segundos! Protege el objetivo.")
+
+                matchTask = Bukkit.getScheduler().runTaskTimer(DefenseGamemode.instance, Runnable {
+                    countdown--
+                    if (countdown <= 0) {
+                        changeState(MatchState.ACTIVE_WAVE)
+                    } else if (countdown <= 5) {
+                        broadcast("§eEmpezando en $countdown...")
+                    }
+                }, 0L, 20L)
+            }
+            MatchState.ACTIVE_WAVE -> {
+                broadcast("§c¡Ronda $currentWave iniciada! ¡Defiende el objetivo!")
+                waveManager?.startNextWave()
+            }
+            MatchState.VOTING -> {
+                objective?.healEndOfWave()
+                broadcast("§a¡Ronda superada! El objetivo ha recuperado vida.")
+
+                countdown = 15
+                broadcast("§bFase de extracción. Tienes $countdown segundos para decidir.")
+
+                matchTask = Bukkit.getScheduler().runTaskTimer(DefenseGamemode.instance, Runnable {
+                    countdown--
+                    if (countdown == 5) {
+                        broadcast("§c¡Las elecciones se han bloqueado!")
+                    }
+                    if (countdown <= 0) {
+                        processVotingResults()
+                    }
+                }, 0L, 20L)
+            }
             MatchState.ENDING -> {
-                LocalWorldService.deleteInstance(world.name)
-                GameManager.removeMatch(matchId)
+                broadcast("§cFinalizando partida...")
+                matchTask?.cancel()
+                objective?.cleanUp()
+
+                Bukkit.getScheduler().runTaskLater(DefenseGamemode.instance, Runnable {
+                    players.mapNotNull { Bukkit.getPlayer(it) }.forEach {
+                        it.gameMode = GameMode.SURVIVAL
+                    }
+                    LocalWorldService.deleteInstance(world.name)
+                    GameManager.removeMatch(matchId)
+                }, 100L)
             }
         }
+    }
+
+    private fun processVotingResults() {
+        changeState(MatchState.ACTIVE_WAVE)
+    }
+
+    fun broadcast(message: String) {
+        players.mapNotNull { Bukkit.getPlayer(it) }.forEach { it.sendMessage(message) }
     }
 
     fun getAvailableSlots(): Int = maxPlayers - players.size
@@ -41,19 +123,86 @@ class Match(
     fun addPlayer(player: Player): Boolean {
         if (state != MatchState.WAITING || players.size >= maxPlayers) return false
         players.add(player.uniqueId)
+        individualLives[player.uniqueId] = config?.livesCount ?: 3
+
+        if (players.size == maxPlayers) {
+            changeState(MatchState.PREPARATION)
+        }
         return true
     }
 
     fun removePlayer(player: Player) {
         players.remove(player.uniqueId)
         deadPlayers.remove(player.uniqueId)
+        individualLives.remove(player.uniqueId)
+
         if (players.isEmpty() && state != MatchState.ENDING) {
             changeState(MatchState.ENDING)
+        } else {
+            checkGameOver()
         }
     }
 
     fun getMobSpawns(): List<org.bukkit.Location> {
-        val config = org.ReDiego0.defenseGamemode.config.MissionManager.getMission(mapName) ?: return emptyList()
-        return config.mobSpawns.map { it.toBukkitLocation(world) }
+        return config?.mobSpawns?.map { it.toBukkitLocation(world) } ?: emptyList()
+    }
+
+    fun handlePlayerDeath(player: Player) {
+        val maxHealth = player.getAttribute(Attribute.MAX_HEALTH)?.value ?: 20.0
+        player.health = maxHealth
+        player.gameMode = GameMode.SPECTATOR
+
+        deadPlayers.add(player.uniqueId)
+
+        var remainingLives = 0
+        if (config?.livesType == LivesType.GROUP) {
+            groupLives--
+            remainingLives = groupLives
+            broadcast("§c${player.name} ha muerto. Vidas del equipo restantes: $remainingLives")
+        } else {
+            val current = (individualLives[player.uniqueId] ?: 1) - 1
+            individualLives[player.uniqueId] = current
+            remainingLives = current
+            broadcast("§c${player.name} ha muerto. Vidas restantes: $remainingLives")
+        }
+
+        if (checkGameOver()) return
+
+        if (remainingLives > 0) {
+            player.sendMessage("§eReapareciendo en 10 segundos...")
+            Bukkit.getScheduler().runTaskLater(DefenseGamemode.instance, Runnable {
+                if (state != MatchState.ENDING && players.contains(player.uniqueId)) {
+                    val spawnLoc = config?.spawnLocation?.toRandomizedBukkitLocation(world, config.spawnRadius)
+                    if (spawnLoc != null) player.teleportAsync(spawnLoc)
+                    player.gameMode = GameMode.SURVIVAL
+                    deadPlayers.remove(player.uniqueId)
+                    player.sendMessage("§a¡Has reaparecido!")
+                }
+            }, 200L)
+        } else {
+            player.sendMessage("§cTe has quedado sin vidas. Estás fuera de la partida.")
+        }
+    }
+
+    fun handleObjectiveDeath() {
+        broadcast("§4¡EL OBJETIVO HA SIDO DESTRUIDO! MISIÓN FALLIDA.")
+        changeState(MatchState.ENDING)
+    }
+
+    private fun checkGameOver(): Boolean {
+        val allDead = players.all { deadPlayers.contains(it) }
+
+        val noLivesLeft = if (config?.livesType == LivesType.GROUP) {
+            groupLives <= 0
+        } else {
+            players.all { (individualLives[it] ?: 0) <= 0 }
+        }
+
+        if (allDead && noLivesLeft) {
+            broadcast("§4¡TODOS HAN MUERTO! GAME OVER.")
+            changeState(MatchState.ENDING)
+            return true
+        }
+        return false
     }
 }

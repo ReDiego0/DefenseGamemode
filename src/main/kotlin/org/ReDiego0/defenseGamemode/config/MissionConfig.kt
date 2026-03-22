@@ -5,6 +5,11 @@ import org.bukkit.Location
 import org.bukkit.World
 import kotlin.random.Random
 
+enum class LivesType {
+    GROUP,
+    INDIVIDUAL
+}
+
 data class MissionConfig(
     val id: String,
     val displayName: String,
@@ -12,6 +17,8 @@ data class MissionConfig(
     val maxPlayers: Int,
     val baseDifficulty: Int,
     val difficultyProfile: DifficultyProfile,
+    val livesType: LivesType,
+    val livesCount: Int,
     val spawnLocation: CustomLocation,
     val spawnRadius: Double,
     val targetLocation: CustomLocation,
