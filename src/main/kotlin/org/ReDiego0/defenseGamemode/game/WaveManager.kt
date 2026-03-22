@@ -22,6 +22,9 @@ class WaveManager(
     private var currentKills = 0
     private var waveBossBar: org.bukkit.boss.BossBar? = null
 
+    private var aiTask: org.bukkit.scheduler.BukkitTask? = null
+    private val aggroTimers = mutableMapOf<java.util.UUID, Long>()
+
     fun startNextWave() {
         currentWave++
         match.currentWave = currentWave
@@ -45,6 +48,7 @@ class WaveManager(
         waveBossBar?.progress = 1.0
 
         spawnWave(currentLevel, currentTier)
+        if (aiTask == null) startSwarmAI()
     }
 
     private fun spawnWave(level: Int, maxTier: Int) {
@@ -100,6 +104,12 @@ class WaveManager(
 
             applyLevelScaling(entity, level)
             setupHologram(entity, mobEntry.id, level)
+
+            val mob = entity as? org.bukkit.entity.Mob
+            if (mob != null) {
+                mob.getAttribute(Attribute.FOLLOW_RANGE)?.baseValue = 150.0
+                mob.target = match.objective?.entity
+            }
 
         } catch (e: IllegalArgumentException) {
             println("Pendiente: Integrar MythicMobs/LevelledMobs para el id ${mobEntry.id}")
@@ -174,6 +184,10 @@ class WaveManager(
         hideBossBar()
         clearRemainingMobs()
 
+        aiTask?.cancel()
+        aiTask = null
+        aggroTimers.clear()
+
         val wavesPerRot = match.config?.wavesPerRotation ?: 5
 
         if (currentWave % wavesPerRot == 0) {
@@ -194,5 +208,44 @@ class WaveManager(
                 entity.remove()
             }
         }
+    }
+
+    fun setPlayerAggro(mob: org.bukkit.entity.Mob, player: Player) {
+        mob.target = player
+        aggroTimers[mob.uniqueId] = System.currentTimeMillis() + 5000L
+    }
+
+    private fun startSwarmAI() {
+        aiTask = org.bukkit.Bukkit.getScheduler().runTaskTimer(org.ReDiego0.defenseGamemode.DefenseGamemode.instance, Runnable {
+            val objectiveEntity = match.objective?.entity ?: return@Runnable
+            val currentTime = System.currentTimeMillis()
+
+            match.world.livingEntities.forEach { entity ->
+                if (entity is org.bukkit.entity.Mob && entity != objectiveEntity) {
+                    val aggroExpiry = aggroTimers[entity.uniqueId]
+
+                    if (aggroExpiry != null) {
+                        if (currentTime > aggroExpiry) {
+                            aggroTimers.remove(entity.uniqueId)
+                            entity.target = objectiveEntity
+                        } else {
+                            val currentTarget = entity.target
+                            if (currentTarget is Player && currentTarget.location.distanceSquared(entity.location) > 400.0) {
+                                aggroTimers.remove(entity.uniqueId)
+                                entity.target = objectiveEntity
+                            }
+                        }
+                    } else {
+                        if (entity.target != objectiveEntity) {
+                            entity.target = objectiveEntity
+                        }
+
+                        if (entity.ticksLived % 60 == 0) {
+                            entity.pathfinder.moveTo(objectiveEntity)
+                        }
+                    }
+                }
+            }
+        }, 0L, 20L)
     }
 }

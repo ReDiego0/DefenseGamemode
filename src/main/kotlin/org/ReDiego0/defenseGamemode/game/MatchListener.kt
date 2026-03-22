@@ -36,6 +36,16 @@ class MatchListener : Listener {
                         match.objective?.updateHealthDisplay()
                     }, 1L)
                 }
+            } else if (match.state == MatchState.ACTIVE_WAVE && entity is org.bukkit.entity.Mob) {
+                if (event is org.bukkit.event.entity.EntityDamageByEntityEvent) {
+                    var damager = event.damager
+                    if (damager is org.bukkit.entity.Projectile && damager.shooter is Player) {
+                        damager = damager.shooter as Player
+                    }
+                    if (damager is Player) {
+                        match.waveManager?.setPlayerAggro(entity, damager)
+                    }
+                }
             }
         }
     }
