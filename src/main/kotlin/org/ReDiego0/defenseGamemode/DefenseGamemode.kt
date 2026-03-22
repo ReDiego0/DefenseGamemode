@@ -2,6 +2,7 @@ package org.ReDiego0.defenseGamemode
 
 import org.ReDiego0.defenseGamemode.command.DefenseCommand
 import org.ReDiego0.defenseGamemode.config.MissionManager
+import org.ReDiego0.defenseGamemode.config.MobManager
 import org.ReDiego0.defenseGamemode.setup.SetupListener
 import org.ReDiego0.defenseGamemode.world.LocalWorldService
 import org.bukkit.plugin.java.JavaPlugin
@@ -41,5 +42,6 @@ class DefenseGamemode : JavaPlugin() {
 
     fun loadManagers() {
         MissionManager.loadMissions(this)
+        MobManager.loadMobs(this)
     }
 }

@@ -116,7 +116,12 @@ object MissionManager {
         val missionsFolder = File(plugin.dataFolder, "missions")
         if (!missionsFolder.exists()) missionsFolder.mkdirs()
 
-        val file = File(missionsFolder, "${session.mapName}.yml")
+        val safeFileName = session.missionDisplayName
+            .lowercase()
+            .replace(" ", "_")
+            .replace(Regex("[^a-z0-9_]"), "")
+
+        val file = File(missionsFolder, "$safeFileName.yml")
         val config = YamlConfiguration.loadConfiguration(file)
 
         config.set("display-name", session.missionDisplayName)
