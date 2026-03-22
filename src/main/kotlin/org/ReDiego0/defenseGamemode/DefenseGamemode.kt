@@ -3,6 +3,7 @@ package org.ReDiego0.defenseGamemode
 import org.ReDiego0.defenseGamemode.command.DefenseCommand
 import org.ReDiego0.defenseGamemode.config.MissionManager
 import org.ReDiego0.defenseGamemode.config.MobManager
+import org.ReDiego0.defenseGamemode.game.GameManager
 import org.ReDiego0.defenseGamemode.game.MatchListener
 import org.ReDiego0.defenseGamemode.setup.SetupListener
 import org.ReDiego0.defenseGamemode.world.LocalWorldService
@@ -27,6 +28,7 @@ class DefenseGamemode : JavaPlugin() {
     }
 
     override fun onDisable() {
+        GameManager.shutdownAllMatches()
         LocalWorldService.shutdownAllInstances()
         logger.info("DefenseGamemode deshabilitado correctamente.")
     }
