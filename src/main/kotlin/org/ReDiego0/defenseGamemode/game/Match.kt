@@ -60,8 +60,7 @@ class Match(
                 objective = DefenseObjective(this, config)
                 objective?.spawn()
 
-                waveManager = WaveManager(this, config.baseDifficulty, "vanilla", config.difficultyProfile)
-
+                waveManager = WaveManager(this, config.baseDifficulty, config.mobPool, config.difficultyProfile)
                 countdown = 15
                 broadcast("§e¡La partida comienza en $countdown segundos! Protege el objetivo.")
 

@@ -17,6 +17,7 @@ data class MissionConfig(
     val maxPlayers: Int,
     val baseDifficulty: Int,
     val difficultyProfile: DifficultyProfile,
+    val mobPool: String,
     val livesType: LivesType,
     val livesCount: Int,
     val wavesPerRotation: Int,

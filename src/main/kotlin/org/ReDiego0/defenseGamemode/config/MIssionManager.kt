@@ -35,6 +35,8 @@ object MissionManager {
                 DifficultyProfile.PROGRESSIVE_CAPPED
             }
 
+            val mobPoolString = config.getString("mob-pool", "vanilla") ?: "vanilla" // <-- Leemos el pool
+
             val spawnX = config.getDouble("spawn.x")
             val spawnY = config.getDouble("spawn.y")
             val spawnZ = config.getDouble("spawn.z")
@@ -64,6 +66,7 @@ object MissionManager {
                 maxPlayers = maxPlayers,
                 baseDifficulty = baseDifficulty,
                 difficultyProfile = difficultyProfile,
+                mobPool = mobPoolString,
                 spawnLocation = CustomLocation(spawnX, spawnY, spawnZ, spawnYaw, spawnPitch),
                 spawnRadius = spawnRadius,
                 targetLocation = CustomLocation(targetX, targetY, targetZ),
@@ -90,6 +93,7 @@ object MissionManager {
         config.set("max-players", 4)
         config.set("base-difficulty", 1)
         config.set("difficulty-profile", "PROGRESSIVE_CAPPED")
+        config.set("mob-pool", "vanilla")
         config.set("spawn.x", 0.0)
         config.set("spawn.y", 64.0)
         config.set("spawn.z", 0.0)
@@ -129,6 +133,7 @@ object MissionManager {
         config.set("max-players", 4)
         config.set("base-difficulty", session.baseDifficulty)
         config.set("difficulty-profile", "PROGRESSIVE_CAPPED")
+        config.set("mob-pool", "vanilla")
         config.set("lives-type", "GROUP")
         config.set("lives-count", 3)
         config.set("waves-per-rotation", 5)
