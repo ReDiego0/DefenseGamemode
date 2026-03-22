@@ -2,3 +2,14 @@ name: DefenseGamemode
 version: '1.0.0'
 main: org.ReDiego0.defenseGamemode.DefenseGamemode
 api-version: '1.21'
+
+commands:
+  defense:
+    description: Comando principal del modo defensa.
+    aliases: [def, dg]
+    usage: /defense <join|party|setup>
+
+permissions:
+  defense.setup:
+    description: Permite usar el modo interactivo para configurar mapas.
+    default: op
