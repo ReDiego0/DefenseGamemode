@@ -60,8 +60,20 @@ class MatchListener : Listener {
         if (match.state == MatchState.ACTIVE_WAVE) {
             if (match.objective?.entity != entity) {
                 match.waveManager?.handleMobDeath()
+
                 event.drops.clear()
                 event.droppedExp = 0
+
+                if (event is org.bukkit.event.entity.PlayerDeathEvent) return
+
+                val deathMessageEvent = event
+                deathMessageEvent.let { it.isCancelled = false }
+
+                try {
+                    val method = event.javaClass.getMethod("setDeathMessage", net.kyori.adventure.text.Component::class.java)
+                    method.invoke(event, null)
+                } catch (e: Exception) {
+                }
             }
         }
     }

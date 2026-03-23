@@ -43,6 +43,7 @@ class DefenseObjective(
         mob.health = finalHealth
         mob.removeWhenFarAway = false
         mob.getAttribute(Attribute.KNOCKBACK_RESISTANCE)?.baseValue = 1.0
+        mob.isCollidable = false
     }
 
     private fun setupAI(mob: Mob) {

@@ -76,7 +76,8 @@ class WaveManager(
         val spawns = match.getMobSpawns()
         if (spawns.isEmpty()) return
 
-        val maxConcurrentMobs = 12 + (match.players.size * 3)
+        val absoluteMaxConcurrent = 12 + (match.players.size * 3)
+        var currentMaxConcurrent = 3
 
         spawnTask = org.bukkit.Bukkit.getScheduler().runTaskTimer(org.ReDiego0.defenseGamemode.DefenseGamemode.instance, Runnable {
             if (match.state != MatchState.ACTIVE_WAVE) {
@@ -84,8 +85,10 @@ class WaveManager(
                 return@Runnable
             }
 
-            if (mobsLeftToSpawn > 0 && activeSpawns < maxConcurrentMobs) {
-                val amountToSpawn = minOf(3, mobsLeftToSpawn, maxConcurrentMobs - activeSpawns)
+            currentMaxConcurrent = minOf(absoluteMaxConcurrent, 3 + (currentKills / 2))
+
+            if (mobsLeftToSpawn > 0 && activeSpawns < currentMaxConcurrent) {
+                val amountToSpawn = minOf(3, mobsLeftToSpawn, currentMaxConcurrent - activeSpawns)
 
                 for (i in 0 until amountToSpawn) {
                     val selectedMob = getRandomWeightedMob(weightedMobs) ?: continue
