@@ -45,6 +45,9 @@ object LocalWorldService {
 
                 if (world != null) {
                     world.isAutoSave = false
+                    world.setGameRule(org.bukkit.GameRules.SHOW_DEATH_MESSAGES, false)
+                    world.setGameRule(org.bukkit.GameRules.MOB_DROPS, false)
+                    world.setGameRule(org.bukkit.GameRules.KEEP_INVENTORY, true)
                     activeInstances[instanceId] = templateName
                 }
 
@@ -81,6 +84,8 @@ object LocalWorldService {
 
                 if (world != null) {
                     world.isAutoSave = false
+                    world.setGameRule(org.bukkit.GameRules.SHOW_DEATH_MESSAGES, false)
+                    world.setGameRule(org.bukkit.GameRules.MOB_DROPS, false)
                 }
 
                 future.complete(world)
@@ -100,10 +105,10 @@ object LocalWorldService {
         Bukkit.getScheduler().runTask(plugin, Runnable {
             Bukkit.unloadWorld(world, false)
 
-            Bukkit.getScheduler().runTaskAsynchronously(plugin, Runnable {
+            Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, Runnable {
                 val worldFolder = File(plugin.server.worldContainer, setupInstanceId)
                 deleteWorldFolderSafe(worldFolder)
-            })
+            }, 60L)
         })
     }
 
@@ -135,10 +140,10 @@ object LocalWorldService {
             Bukkit.unloadWorld(world, false)
             activeInstances.remove(instanceId)
 
-            Bukkit.getScheduler().runTaskAsynchronously(plugin, Runnable {
+            Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, Runnable {
                 val worldFolder = File(plugin.server.worldContainer, instanceId)
                 deleteWorldFolderSafe(worldFolder)
-            })
+            }, 60L)
         })
     }
 

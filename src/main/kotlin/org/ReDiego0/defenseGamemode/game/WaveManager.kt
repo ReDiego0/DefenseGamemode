@@ -25,6 +25,10 @@ class WaveManager(
     private var aiTask: org.bukkit.scheduler.BukkitTask? = null
     private val aggroTimers = mutableMapOf<java.util.UUID, Long>()
 
+    private var mobsLeftToSpawn = 0
+    private var activeSpawns = 0
+    private var spawnTask: org.bukkit.scheduler.BukkitTask? = null
+
     fun startNextWave() {
         currentWave++
         match.currentWave = currentWave
@@ -65,22 +69,38 @@ class WaveManager(
 
         targetKills = 10 + (currentWave * 2) + (match.players.size * 5)
 
-        val mobsToSpawn = (targetKills * 1.3).toInt()
+        mobsLeftToSpawn = (targetKills * 1.3).toInt()
         currentKills = 0
+        activeSpawns = 0
 
         val spawns = match.getMobSpawns()
         if (spawns.isEmpty()) return
 
-        for (i in 0 until mobsToSpawn) {
-            val selectedMob = getRandomWeightedMob(weightedMobs) ?: continue
-            val baseLoc = spawns.random()
+        val maxConcurrentMobs = 12 + (match.players.size * 3)
 
-            val offsetX = Random.nextDouble(-2.0, 2.0)
-            val offsetZ = Random.nextDouble(-2.0, 2.0)
-            val spawnLoc = baseLoc.clone().add(offsetX, 0.0, offsetZ)
+        spawnTask = org.bukkit.Bukkit.getScheduler().runTaskTimer(org.ReDiego0.defenseGamemode.DefenseGamemode.instance, Runnable {
+            if (match.state != MatchState.ACTIVE_WAVE) {
+                spawnTask?.cancel()
+                return@Runnable
+            }
 
-            spawnEntity(selectedMob, spawnLoc, level)
-        }
+            if (mobsLeftToSpawn > 0 && activeSpawns < maxConcurrentMobs) {
+                val amountToSpawn = minOf(3, mobsLeftToSpawn, maxConcurrentMobs - activeSpawns)
+
+                for (i in 0 until amountToSpawn) {
+                    val selectedMob = getRandomWeightedMob(weightedMobs) ?: continue
+                    val baseLoc = spawns.random()
+
+                    val offsetX = Random.nextDouble(-2.0, 2.0)
+                    val offsetZ = Random.nextDouble(-2.0, 2.0)
+                    val spawnLoc = baseLoc.clone().add(offsetX, 0.0, offsetZ)
+
+                    spawnEntity(selectedMob, spawnLoc, level)
+                    mobsLeftToSpawn--
+                    activeSpawns++
+                }
+            }
+        }, 0L, 20L)
     }
 
     private fun getRandomWeightedMob(weightedMobs: List<Pair<MobEntry, Double>>): MobEntry? {
@@ -143,13 +163,14 @@ class WaveManager(
 
     fun handleMobDeath() {
         currentKills++
+        activeSpawns--
         updateBossBar()
 
         val remaining = targetKills - currentKills
 
         if (remaining <= 0) {
             finishWave()
-        } else if (remaining <= 3) {
+        } else if (remaining <= 3 && mobsLeftToSpawn <= 0) {
             highlightRemainingMobs()
         }
     }
@@ -184,6 +205,8 @@ class WaveManager(
         hideBossBar()
         clearRemainingMobs()
 
+        spawnTask?.cancel()
+        spawnTask = null
         aiTask?.cancel()
         aiTask = null
         aggroTimers.clear()
