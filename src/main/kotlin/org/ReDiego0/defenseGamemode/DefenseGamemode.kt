@@ -1,5 +1,8 @@
 package org.ReDiego0.defenseGamemode
 
+import org.ReDiego0.defenseGamemode.combat.CooldownManager
+import org.ReDiego0.defenseGamemode.combat.listener.InputListener
+import org.ReDiego0.defenseGamemode.combat.manager.CombatManager
 import org.ReDiego0.defenseGamemode.command.DefenseCommand
 import org.ReDiego0.defenseGamemode.config.MissionManager
 import org.ReDiego0.defenseGamemode.config.MobManager
@@ -17,9 +20,18 @@ class DefenseGamemode : JavaPlugin() {
         lateinit var instance: DefenseGamemode
     }
 
+    lateinit var cooldownManager: CooldownManager
+        private set
+    lateinit var combatManager: org.ReDiego0.defenseGamemode.combat.manager.CombatManager
+        private set
+
     override fun onEnable() {
         logger.info("Iniciando DefenseGamemode...")
         instance = this
+
+        cooldownManager = CooldownManager()
+        combatManager = CombatManager(this)
+
         LocalWorldService.initialize(this)
         PlayerDataManager.initialize(this)
 
@@ -46,6 +58,7 @@ class DefenseGamemode : JavaPlugin() {
         server.pluginManager.registerEvents(SetupListener(), this)
         server.pluginManager.registerEvents(MatchListener(), this)
         server.pluginManager.registerEvents(PlayerDataListener(), this)
+        server.pluginManager.registerEvents(InputListener(combatManager), this)
     }
 
     fun loadManagers() {
