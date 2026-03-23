@@ -35,7 +35,7 @@ object MissionManager {
                 DifficultyProfile.PROGRESSIVE_CAPPED
             }
 
-            val mobPoolString = config.getString("mob-pool", "vanilla") ?: "vanilla" // <-- Leemos el pool
+            val mobPoolString = config.getString("mob-pool", "vanilla") ?: "vanilla"
 
             val spawnX = config.getDouble("spawn.x")
             val spawnY = config.getDouble("spawn.y")
@@ -55,6 +55,14 @@ object MissionManager {
                 CustomLocation(mx, my, mz)
             }
 
+            val rewardsList = mutableListOf<Reward>()
+            val rawRewards = config.getMapList("rewards")
+            for (map in rawRewards) {
+                val command = map["command"] as? String ?: continue
+                val baseValue = (map["base-value"] as? Number)?.toDouble() ?: 0.0
+                rewardsList.add(Reward(command, baseValue))
+            }
+
             val livesTypeString = config.getString("lives-type", "GROUP")?.uppercase() ?: "GROUP"
             val livesCountConfig = config.getInt("lives-count", 3)
             val wavesPerRotationConfig = config.getInt("waves-per-rotation", 5)
@@ -71,6 +79,7 @@ object MissionManager {
                 spawnRadius = spawnRadius,
                 targetLocation = CustomLocation(targetX, targetY, targetZ),
                 mobSpawns = mobSpawnsList,
+                rewards = rewardsList,
                 livesType = try { LivesType.valueOf(livesTypeString) } catch (e: Exception) { LivesType.GROUP },
                 livesCount = livesCountConfig,
                 wavesPerRotation = wavesPerRotationConfig
@@ -112,6 +121,13 @@ object MissionManager {
             mapOf("x" to -20.0, "y" to 64.0, "z" to -20.0)
         )
         config.set("mob-spawns", defaultMobSpawns)
+
+        val defaultRewards = listOf(
+            mapOf("command" to "eco give {user} {quantity}", "base-value" to 50.0),
+            mapOf("command" to "give {user} diamond {quantity}", "base-value" to 1.0),
+            mapOf("command" to "say ¡El jugador {user} completó la extracción!", "base-value" to 0.0)
+        )
+        config.set("rewards", defaultRewards)
 
         config.save(defaultFile)
     }
@@ -157,6 +173,11 @@ object MissionManager {
             mapOf("x" to loc.x, "y" to loc.y, "z" to loc.z)
         }
         config.set("mob-spawns", mobSpawnsList)
+
+        val basicReward = listOf(
+            mapOf("command" to "eco give {user} {quantity}", "base-value" to 50.0)
+        )
+        config.set("rewards", basicReward)
 
         config.save(file)
         loadMissions(plugin)

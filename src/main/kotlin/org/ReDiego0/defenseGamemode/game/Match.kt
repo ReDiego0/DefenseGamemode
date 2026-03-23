@@ -141,7 +141,9 @@ class Match(
         }
 
         toExtract.forEach { player ->
-            player.sendMessage("§aTe has retirado con éxito. ¡Calculando recompensas...!")
+            giveRewards(player, success = true)
+
+            player.sendMessage("§aTe has retirado con éxito. ¡Misión completada!")
             val fallbackWorld = Bukkit.getWorlds().first()
             player.teleportAsync(fallbackWorld.spawnLocation)
             removePlayer(player)
@@ -154,6 +156,25 @@ class Match(
                     changeState(MatchState.ACTIVE_WAVE)
                 }
             }, 60L)
+        }
+    }
+
+    private fun giveRewards(player: Player, success: Boolean) {
+        if (config == null || config.rewards.isEmpty()) return
+
+        val penalty = if (success) 1.0 else 0.25
+        val multiplier = currentWave * config.baseDifficulty * penalty
+
+        for (reward in config.rewards) {
+            val finalQuantity = (reward.baseValue * multiplier).toInt()
+
+            if (reward.baseValue > 0 && finalQuantity <= 0) continue
+
+            var parsedCommand = reward.command
+                .replace("{user}", player.name)
+                .replace("{quantity}", finalQuantity.toString())
+
+            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), parsedCommand)
         }
     }
 
@@ -216,6 +237,12 @@ class Match(
 
     fun handleObjectiveDeath() {
         broadcast("§4¡EL OBJETIVO HA SIDO DESTRUIDO! MISIÓN FALLIDA.")
+
+        players.mapNotNull { Bukkit.getPlayer(it) }.forEach { player ->
+            giveRewards(player, success = false)
+            player.sendMessage("§cCalculando recompensas de consolación...")
+        }
+
         changeState(MatchState.ENDING)
     }
 
@@ -230,6 +257,12 @@ class Match(
 
         if (allDead && noLivesLeft) {
             broadcast("§4¡TODOS HAN MUERTO! GAME OVER.")
+
+            players.mapNotNull { Bukkit.getPlayer(it) }.forEach { player ->
+                giveRewards(player, success = false)
+                player.sendMessage("§cCalculando recompensas de consolación...")
+            }
+
             changeState(MatchState.ENDING)
             return true
         }

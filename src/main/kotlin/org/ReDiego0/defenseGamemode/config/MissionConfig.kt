@@ -10,6 +10,11 @@ enum class LivesType {
     INDIVIDUAL
 }
 
+data class Reward(
+    val command: String,
+    val baseValue: Double
+)
+
 data class MissionConfig(
     val id: String,
     val displayName: String,
@@ -24,7 +29,8 @@ data class MissionConfig(
     val spawnLocation: CustomLocation,
     val spawnRadius: Double,
     val targetLocation: CustomLocation,
-    val mobSpawns: List<CustomLocation>
+    val mobSpawns: List<CustomLocation>,
+    val rewards: List<Reward>
 )
 
 data class CustomLocation(
