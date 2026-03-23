@@ -24,9 +24,21 @@ class DefenseCommand : CommandExecutor, TabCompleter {
             "join" -> handleJoin(sender, args)
             "party" -> handleParty(sender, args)
             "setup" -> handleSetup(sender, args)
+            "class" -> handleClassMenu(sender)
+            "loadout" -> handleLoadoutMenu(sender)
             else -> sendHelp(sender)
         }
         return true
+    }
+
+    private fun handleClassMenu(sender: CommandSender) {
+        if (sender !is Player) return
+        sender.sendMessage("§bAbriendo Menú de Clases... (En desarrollo)")
+    }
+
+    private fun handleLoadoutMenu(sender: CommandSender) {
+        if (sender !is Player) return
+        sender.sendMessage("§eAbriendo Inventario de Expedición... (En desarrollo)")
     }
 
     private fun handleSetup(sender: CommandSender, args: Array<out String>) {
@@ -116,13 +128,15 @@ class DefenseCommand : CommandExecutor, TabCompleter {
         sender.sendMessage("§a/defense party accept")
         sender.sendMessage("§a/defense party leave")
         sender.sendMessage("§a/defense party kick <jugador>")
+        sender.sendMessage("§a/defense class")
+        sender.sendMessage("§a/defense loadout")
     }
 
     override fun onTabComplete(sender: CommandSender, command: Command, label: String, args: Array<out String>): List<String> {
         val completions = mutableListOf<String>()
 
         if (args.size == 1) {
-            val options = mutableListOf("join", "party")
+            val options = mutableListOf("join", "party", "class", "loadout")
             if (sender.hasPermission("defense.setup")) options.add("setup")
             options.filter { it.startsWith(args[0].lowercase()) }.forEach { completions.add(it) }
         } else if (args.size >= 2) {
