@@ -33,12 +33,12 @@ class DefenseCommand : CommandExecutor, TabCompleter {
 
     private fun handleClassMenu(sender: CommandSender) {
         if (sender !is Player) return
-        sender.sendMessage("§bAbriendo Menú de Clases... (En desarrollo)")
+        org.ReDiego0.defenseGamemode.ui.ClassMenu.openMainMenu(sender)
     }
 
     private fun handleLoadoutMenu(sender: CommandSender) {
         if (sender !is Player) return
-        sender.sendMessage("§eAbriendo Inventario de Expedición... (En desarrollo)")
+        org.ReDiego0.defenseGamemode.ui.LoadoutMenu.openLoadout(sender)
     }
 
     private fun handleSetup(sender: CommandSender, args: Array<out String>) {

@@ -11,6 +11,7 @@ import org.ReDiego0.defenseGamemode.game.MatchListener
 import org.ReDiego0.defenseGamemode.player.PlayerDataListener
 import org.ReDiego0.defenseGamemode.player.PlayerDataManager
 import org.ReDiego0.defenseGamemode.setup.SetupListener
+import org.ReDiego0.defenseGamemode.ui.MenuListener
 import org.ReDiego0.defenseGamemode.world.LocalWorldService
 import org.bukkit.plugin.java.JavaPlugin
 
@@ -59,6 +60,7 @@ class DefenseGamemode : JavaPlugin() {
         server.pluginManager.registerEvents(MatchListener(), this)
         server.pluginManager.registerEvents(PlayerDataListener(), this)
         server.pluginManager.registerEvents(InputListener(combatManager), this)
+        server.pluginManager.registerEvents(MenuListener(), this)
     }
 
     fun loadManagers() {
