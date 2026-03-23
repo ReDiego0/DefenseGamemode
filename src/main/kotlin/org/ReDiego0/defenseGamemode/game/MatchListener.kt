@@ -59,21 +59,33 @@ class MatchListener : Listener {
 
         if (match.state == MatchState.ACTIVE_WAVE) {
             if (match.objective?.entity != entity) {
-                match.waveManager?.handleMobDeath()
 
+                val killer = entity.killer
+                if (killer != null && match.players.contains(killer.uniqueId)) {
+                    val data = org.ReDiego0.defenseGamemode.player.PlayerDataManager.getPlayerData(killer.uniqueId)
+                    if (data != null) {
+                        data.totalKills++
+                        val leveledUp = data.addExperience(15.0)
+
+                        if (leveledUp) {
+                            killer.sendMessage("§b✦ ¡Felicidades! Has alcanzado el §eNivel ${data.level}§b de Defensa ✦")
+                            killer.playSound(killer.location, org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f)
+                        }
+                    }
+                }
+
+                match.waveManager?.handleMobDeath()
                 event.drops.clear()
                 event.droppedExp = 0
 
                 if (event is org.bukkit.event.entity.PlayerDeathEvent) return
-
-                val deathMessageEvent = event
-                deathMessageEvent.let { it.isCancelled = false }
+                val deathMessageEvent = event as? org.bukkit.event.entity.EntityDeathEvent
+                deathMessageEvent?.let { it.isCancelled = false }
 
                 try {
                     val method = event.javaClass.getMethod("setDeathMessage", net.kyori.adventure.text.Component::class.java)
                     method.invoke(event, null)
-                } catch (e: Exception) {
-                }
+                } catch (e: Exception) {}
             }
         }
     }
