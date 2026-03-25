@@ -13,12 +13,15 @@ repositories {
         name = "papermc-repo"
     }
     maven("https://repo.extendedclip.com/content/repositories/placeholderapi/")
+    maven("https://jitpack.io")
+    maven("https://maven.enginehub.org/repo/")
 }
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("com.github.stefvanschie.inventoryframework:IF:0.11.6")
+    compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.9")
 }
 
 tasks {
