@@ -71,21 +71,6 @@ class MenuListener : Listener {
                     player.playSound(player.location, Sound.UI_BUTTON_CLICK, 1f, 1f)
                     ConsumableSelectMenu.open(player, 1)
                 }
-            } else if (title.contains("Seleccionar Arma")) {
-                if (clickedItem.type == org.bukkit.Material.BARRIER) {
-                    player.playSound(player.location, Sound.ENTITY_VILLAGER_NO, 1f, 1f)
-                    return
-                }
-
-                val lore = clickedItem.itemMeta.lore ?: return
-                val idLine = lore.find { it.startsWith("§8ID: ") } ?: return
-                val weaponId = idLine.substringAfter("§8ID: ")
-                val slotIndex = title.substringAfter("(").substringBefore(")").toIntOrNull() ?: 0
-
-                data.equippedWeapons[slotIndex] = weaponId
-                player.playSound(player.location, Sound.ITEM_ARMOR_EQUIP_IRON, 1f, 1f)
-                player.sendMessage("§aArma equipada en la ranura ${slotIndex + 1}.")
-                LoadoutMenu.openLoadout(player)
             } else if (title.contains("Seleccionar Armadura")) {
                 if (clickedItem.type == org.bukkit.Material.BARRIER) {
                     player.playSound(player.location, Sound.ENTITY_VILLAGER_NO, 1f, 1f)
@@ -114,6 +99,21 @@ class MenuListener : Listener {
                 data.equippedConsumables[slotIndex] = consumableId
                 player.playSound(player.location, Sound.ITEM_ARMOR_EQUIP_CHAIN, 1f, 1f)
                 player.sendMessage("§aConsumible equipado en la ranura ${slotIndex + 1}.")
+                LoadoutMenu.openLoadout(player)
+            } else if (title.contains("Seleccionar Arma")) {
+                if (clickedItem.type == org.bukkit.Material.BARRIER) {
+                    player.playSound(player.location, Sound.ENTITY_VILLAGER_NO, 1f, 1f)
+                    return
+                }
+
+                val lore = clickedItem.itemMeta.lore ?: return
+                val idLine = lore.find { it.startsWith("§8ID: ") } ?: return
+                val weaponId = idLine.substringAfter("§8ID: ")
+                val slotIndex = title.substringAfter("(").substringBefore(")").toIntOrNull() ?: 0
+
+                data.equippedWeapons[slotIndex] = weaponId
+                player.playSound(player.location, Sound.ITEM_ARMOR_EQUIP_IRON, 1f, 1f)
+                player.sendMessage("§aArma equipada en la ranura ${slotIndex + 1}.")
                 LoadoutMenu.openLoadout(player)
             } else if (title.contains("Categorías Exóticas")) {
                 if (itemName.contains("Armas Exóticas")) {
