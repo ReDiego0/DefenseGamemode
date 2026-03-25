@@ -26,6 +26,7 @@ class YamlStorage(private val plugin: DefenseGamemode) : StorageProvider {
         val level = config.getInt("level", 1)
         val exp = config.getDouble("experience", 0.0)
         val kills = config.getInt("totalKills", 0)
+        val missionsCompleted = config.getInt("missionsCompleted", 0)
         val currentClass = config.getString("currentClass", "iniciado") ?: "iniciado"
 
         val unlockedClasses = config.getStringList("unlockedClasses").toMutableSet()
@@ -50,7 +51,7 @@ class YamlStorage(private val plugin: DefenseGamemode) : StorageProvider {
         val equippedConsumables = config.getStringList("equippedConsumables").toMutableList()
         if (equippedConsumables.isEmpty()) equippedConsumables.addAll(listOf("", ""))
 
-        return PlayerData(uuid, level, exp, kills, currentClass, unlockedClasses, unlockedWeapons, equippedWeapons, equippedArmor, equippedConsumables)
+        return PlayerData(uuid, level, exp, kills, missionsCompleted, currentClass, unlockedClasses, unlockedWeapons, equippedWeapons, equippedArmor, equippedConsumables)
     }
 
     override fun savePlayer(playerData: PlayerData) {
@@ -60,6 +61,7 @@ class YamlStorage(private val plugin: DefenseGamemode) : StorageProvider {
         config.set("level", playerData.level)
         config.set("experience", playerData.experience)
         config.set("totalKills", playerData.totalKills)
+        config.set("missionsCompleted", playerData.missionsCompleted)
         config.set("currentClass", playerData.currentClass)
         config.set("unlockedClasses", playerData.unlockedClasses.toList())
 

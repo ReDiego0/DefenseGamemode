@@ -29,6 +29,7 @@ class MySQLStorage(
                     "level INT NOT NULL," +
                     "experience DOUBLE NOT NULL," +
                     "totalKills INT NOT NULL," +
+                    "missionsCompleted INT NOT NULL DEFAULT 0," +
                     "currentClass VARCHAR(32) NOT NULL DEFAULT 'iniciado'," +
                     "unlockedClasses TEXT NOT NULL," +
                     "unlockedWeapons TEXT," +
@@ -47,6 +48,7 @@ class MySQLStorage(
             val level = rs.getInt("level")
             val exp = rs.getDouble("experience")
             val kills = rs.getInt("totalKills")
+            val missionsCompleted = rs.getInt("missionsCompleted")
             val currentClass = rs.getString("currentClass") ?: "iniciado"
             val unlockedStr = rs.getString("unlockedClasses") ?: "iniciado"
 
@@ -61,16 +63,16 @@ class MySQLStorage(
             val equippedArmor: MutableList<String> = gson.fromJson(rs.getString("equippedArmor") ?: "[\"\",\"\",\"\",\"\"]", listType) ?: mutableListOf("", "", "", "")
             val equippedConsumables: MutableList<String> = gson.fromJson(rs.getString("equippedConsumables") ?: "[\"\",\"\"]", listType) ?: mutableListOf("", "")
 
-            return PlayerData(uuid, level, exp, kills, currentClass, unlockedClasses, unlockedWeapons, equippedWeapons, equippedArmor, equippedConsumables)
+            return PlayerData(uuid, level, exp, kills, missionsCompleted, currentClass, unlockedClasses, unlockedWeapons, equippedWeapons, equippedArmor, equippedConsumables)
         }
         return PlayerData(uuid)
     }
 
     override fun savePlayer(playerData: PlayerData) {
         val statement = connection?.prepareStatement(
-            "INSERT INTO player_data (uuid, level, experience, totalKills, currentClass, unlockedClasses, unlockedWeapons, equippedWeapons, equippedArmor, equippedConsumables) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
-                    "ON DUPLICATE KEY UPDATE level = ?, experience = ?, totalKills = ?, currentClass = ?, unlockedClasses = ?, unlockedWeapons = ?, equippedWeapons = ?, equippedArmor = ?, equippedConsumables = ?"
+            "INSERT INTO player_data (uuid, level, experience, totalKills, missionsCompleted, currentClass, unlockedClasses, unlockedWeapons, equippedWeapons, equippedArmor, equippedConsumables) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
+                    "ON DUPLICATE KEY UPDATE level = ?, experience = ?, totalKills = ?, missionsCompleted = ?, currentClass = ?, unlockedClasses = ?, unlockedWeapons = ?, equippedWeapons = ?, equippedArmor = ?, equippedConsumables = ?"
         )
         val weaponsJson = gson.toJson(playerData.unlockedWeapons)
         val eqWeaponsJson = gson.toJson(playerData.equippedWeapons)
@@ -81,22 +83,24 @@ class MySQLStorage(
         statement?.setInt(2, playerData.level)
         statement?.setDouble(3, playerData.experience)
         statement?.setInt(4, playerData.totalKills)
-        statement?.setString(5, playerData.currentClass)
-        statement?.setString(6, playerData.unlockedClasses.joinToString(","))
-        statement?.setString(7, weaponsJson)
-        statement?.setString(8, eqWeaponsJson)
-        statement?.setString(9, eqArmorJson)
-        statement?.setString(10, eqConsumablesJson)
+        statement?.setInt(5, playerData.missionsCompleted)
+        statement?.setString(6, playerData.currentClass)
+        statement?.setString(7, playerData.unlockedClasses.joinToString(","))
+        statement?.setString(8, weaponsJson)
+        statement?.setString(9, eqWeaponsJson)
+        statement?.setString(10, eqArmorJson)
+        statement?.setString(11, eqConsumablesJson)
 
-        statement?.setInt(11, playerData.level)
-        statement?.setDouble(12, playerData.experience)
-        statement?.setInt(13, playerData.totalKills)
-        statement?.setString(14, playerData.currentClass)
-        statement?.setString(15, playerData.unlockedClasses.joinToString(","))
-        statement?.setString(16, weaponsJson)
-        statement?.setString(17, eqWeaponsJson)
-        statement?.setString(18, eqArmorJson)
-        statement?.setString(19, eqConsumablesJson)
+        statement?.setInt(12, playerData.level)
+        statement?.setDouble(13, playerData.experience)
+        statement?.setInt(14, playerData.totalKills)
+        statement?.setInt(15, playerData.missionsCompleted)
+        statement?.setString(16, playerData.currentClass)
+        statement?.setString(17, playerData.unlockedClasses.joinToString(","))
+        statement?.setString(18, weaponsJson)
+        statement?.setString(19, eqWeaponsJson)
+        statement?.setString(20, eqArmorJson)
+        statement?.setString(21, eqConsumablesJson)
 
         statement?.executeUpdate()
     }
