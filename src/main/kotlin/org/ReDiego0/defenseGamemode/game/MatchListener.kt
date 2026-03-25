@@ -103,4 +103,28 @@ class MatchListener : Listener {
             }
         }
     }
+
+    @EventHandler
+    fun onProjectileHit(event: org.bukkit.event.entity.ProjectileHitEvent) {
+        val projectile = event.entity
+        val key = org.bukkit.NamespacedKey(org.ReDiego0.defenseGamemode.DefenseGamemode.instance, "bomb_projectile")
+
+        if (projectile.persistentDataContainer.has(key, org.bukkit.persistence.PersistentDataType.BYTE)) {
+            val loc = projectile.location
+            val world = loc.world
+            val shooter = projectile.shooter as? Player ?: return
+            val match = org.ReDiego0.defenseGamemode.game.GameManager.getMatch(world.name) ?: return
+
+            world.spawnParticle(org.bukkit.Particle.EXPLOSION, loc, 3)
+            world.playSound(loc, org.bukkit.Sound.ENTITY_GENERIC_EXPLODE, 1f, 1f)
+
+            val entities = world.getNearbyEntities(loc, 2.0, 2.0, 2.0)
+            for (entity in entities) {
+                if (entity is org.bukkit.entity.LivingEntity && entity !is Player && entity != match.objective?.entity) {
+                    entity.damage(40.0, shooter)
+                }
+            }
+            projectile.remove()
+        }
+    }
 }

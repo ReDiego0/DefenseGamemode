@@ -89,4 +89,22 @@ class CombatManager(private val plugin: DefenseGamemode) {
         player.world.spawnParticle(Particle.CLOUD, player.location, 5, 0.2, 0.1, 0.2, 0.05)
         player.sendActionBar(net.kyori.adventure.text.Component.text(name))
     }
+
+    fun handleConsumable(player: Player, consumableId: String) {
+        when (consumableId) {
+            "pocion_curacion" -> {
+                val maxHealth = player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH)?.value ?: 20.0
+                player.health = (player.health + 8.0).coerceAtMost(maxHealth)
+                player.world.spawnParticle(org.bukkit.Particle.HEART, player.location.add(0.0, 1.0, 0.0), 5, 0.5, 0.5, 0.5, 0.0)
+                player.playSound(player.location, org.bukkit.Sound.ENTITY_WITCH_DRINK, 1f, 1f)
+            }
+            "bomba_rango_bajo" -> {
+                val snowball = player.launchProjectile(org.bukkit.entity.Snowball::class.java)
+                val key = org.bukkit.NamespacedKey(plugin, "bomb_projectile")
+                snowball.persistentDataContainer.set(key, org.bukkit.persistence.PersistentDataType.BYTE, 1)
+                snowball.item = org.bukkit.inventory.ItemStack(org.bukkit.Material.TNT)
+                player.playSound(player.location, org.bukkit.Sound.ENTITY_SNOWBALL_THROW, 1f, 0.5f)
+            }
+        }
+    }
 }

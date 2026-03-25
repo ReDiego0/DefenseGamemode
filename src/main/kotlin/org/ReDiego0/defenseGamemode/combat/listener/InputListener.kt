@@ -67,8 +67,18 @@ class InputListener(private val combatManager: CombatManager) : Listener {
                 if (item.type.isAir) return
                 val meta = item.itemMeta ?: return
 
-                val key = NamespacedKey(DefenseGamemode.instance, "weapon_id")
-                val weaponId = meta.persistentDataContainer.get(key, PersistentDataType.STRING) ?: return
+                val consKey = NamespacedKey(DefenseGamemode.instance, "consumable_id")
+                if (meta.persistentDataContainer.has(consKey, PersistentDataType.STRING)) {
+                    event.isCancelled = true
+                    val consumableId = meta.persistentDataContainer.get(consKey, PersistentDataType.STRING) ?: return
+
+                    item.amount -= 1
+                    combatManager.handleConsumable(player, consumableId)
+                    return
+                }
+
+                val wpKey = NamespacedKey(DefenseGamemode.instance, "weapon_id")
+                val weaponId = meta.persistentDataContainer.get(wpKey, PersistentDataType.STRING) ?: return
 
                 val weapon = WeaponManager.getWeapon(weaponId) ?: return
 

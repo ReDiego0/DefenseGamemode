@@ -150,6 +150,27 @@ class Match(
             }
         }
 
+        val armorId = data.equippedArmor.firstOrNull { it.isNotEmpty() } ?: "set_hierro"
+        val armorSet = org.ReDiego0.defenseGamemode.combat.equipment.ArmorManager.getArmorSet(armorId)
+
+        if (armorSet != null) {
+            player.inventory.helmet = org.ReDiego0.defenseGamemode.combat.equipment.ArmorManager.buildPiece(armorSet.helmet)
+            player.inventory.chestplate = org.ReDiego0.defenseGamemode.combat.equipment.ArmorManager.buildPiece(armorSet.chestplate)
+            player.inventory.leggings = org.ReDiego0.defenseGamemode.combat.equipment.ArmorManager.buildPiece(armorSet.leggings)
+            player.inventory.boots = org.ReDiego0.defenseGamemode.combat.equipment.ArmorManager.buildPiece(armorSet.boots)
+        }
+
+        val defaultConsumables = listOf("pocion_curacion", "bomba_rango_bajo")
+        var consumableSlot = 7
+
+        defaultConsumables.forEach { consumableId ->
+            val item = org.ReDiego0.defenseGamemode.combat.equipment.ConsumableManager.buildConsumableItem(consumableId)
+            if (item != null && consumableSlot <= 8) {
+                player.inventory.setItem(consumableSlot, item)
+                consumableSlot++
+            }
+        }
+
         player.updateInventory()
     }
 
