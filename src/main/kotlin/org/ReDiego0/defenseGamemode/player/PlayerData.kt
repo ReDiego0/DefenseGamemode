@@ -40,7 +40,7 @@ data class PlayerData(
         return leveledUp
     }
 
-    private fun checkClassUnlocks() {
+    fun checkClassUnlocks() {
         if (level >= 5) {
             unlockedClasses.add("guardian")
             unlockedClasses.add("mago")

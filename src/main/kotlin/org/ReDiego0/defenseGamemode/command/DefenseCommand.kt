@@ -2,6 +2,7 @@ package org.ReDiego0.defenseGamemode.command
 
 import org.ReDiego0.defenseGamemode.game.MatchmakingManager
 import org.ReDiego0.defenseGamemode.player.PartyManager
+import org.ReDiego0.defenseGamemode.player.PlayerDataManager
 import org.ReDiego0.defenseGamemode.setup.SetupManager
 import org.bukkit.Bukkit
 import org.bukkit.command.Command
@@ -27,6 +28,7 @@ class DefenseCommand : CommandExecutor, TabCompleter {
             "class" -> handleClassMenu(sender)
             "loadout" -> handleLoadoutMenu(sender)
             "exotics" -> handleExoticsMenu(sender)
+            "level" -> handleLevel(sender, args)
             else -> sendHelp(sender)
         }
         return true
@@ -127,6 +129,53 @@ class DefenseCommand : CommandExecutor, TabCompleter {
         }
     }
 
+    private fun handleLevel(sender: CommandSender, args: Array<out String>) {
+        if (!sender.hasPermission("defense.admin")) {
+            sender.sendMessage("§cNo tienes permisos para usar esto.")
+            return
+        }
+
+        if (args.size < 4) {
+            sender.sendMessage("§cUso: /defense level <add|set> <jugador> <cantidad>")
+            return
+        }
+
+        val action = args[1].lowercase()
+        val target = Bukkit.getPlayer(args[2])
+        val amount = args[3].toIntOrNull()
+
+        if (target == null) {
+            sender.sendMessage("§cJugador no encontrado.")
+            return
+        }
+
+        if (amount == null || amount < 0) {
+            sender.sendMessage("§cLa cantidad debe ser un número entero positivo.")
+            return
+        }
+
+        val data = PlayerDataManager.getPlayerData(target.uniqueId)
+
+        if (data == null) {
+            sender.sendMessage("§cNo se encontraron datos para el jugador.")
+            return
+        }
+
+        when (action) {
+            "add" -> {
+                data.level += amount
+                data.checkClassUnlocks()
+                sender.sendMessage("§aSe han añadido $amount niveles a ${target.name}. Nivel actual: ${data.level}")
+            }
+            "set" -> {
+                data.level = amount
+                data.checkClassUnlocks()
+                sender.sendMessage("§aEl nivel de ${target.name} se ha establecido en $amount.")
+            }
+            else -> sender.sendMessage("§cUso: /defense level <add|set> <jugador> <cantidad>")
+        }
+    }
+
     private fun sendHelp(sender: CommandSender) {
         sender.sendMessage("§e--- Comandos de Defense ---")
         sender.sendMessage("§a/defense join [jugador] <mapa>")
@@ -137,6 +186,9 @@ class DefenseCommand : CommandExecutor, TabCompleter {
         sender.sendMessage("§a/defense class")
         sender.sendMessage("§a/defense loadout")
         sender.sendMessage("§a/defense exotics")
+        if (sender.hasPermission("defense.admin")) {
+            sender.sendMessage("§c/defense level <add|set> <jugador> <cantidad>")
+        }
     }
 
     override fun onTabComplete(sender: CommandSender, command: Command, label: String, args: Array<out String>): List<String> {
@@ -145,6 +197,7 @@ class DefenseCommand : CommandExecutor, TabCompleter {
         if (args.size == 1) {
             val options = mutableListOf("join", "party", "class", "loadout", "exotics")
             if (sender.hasPermission("defense.setup")) options.add("setup")
+            if (sender.hasPermission("defense.admin")) options.add("level")
             options.filter { it.startsWith(args[0].lowercase()) }.forEach { completions.add(it) }
         } else if (args.size >= 2) {
             val subCommand = args[0].lowercase()
@@ -175,6 +228,19 @@ class DefenseCommand : CommandExecutor, TabCompleter {
                             if ("start".startsWith(args[1].lowercase())) completions.add("start")
                         } else if (args.size == 3 && args[1].lowercase() == "start") {
                             completions.add("<mapa>")
+                        }
+                    }
+                }
+                "level" -> {
+                    if (sender.hasPermission("defense.admin")) {
+                        if (args.size == 2) {
+                            listOf("add", "set").filter { it.startsWith(args[1].lowercase()) }.forEach { completions.add(it) }
+                        } else if (args.size == 3) {
+                            Bukkit.getOnlinePlayers().forEach { player ->
+                                if (player.name.lowercase().startsWith(args[2].lowercase())) completions.add(player.name)
+                            }
+                        } else if (args.size == 4) {
+                            completions.add("<cantidad>")
                         }
                     }
                 }
