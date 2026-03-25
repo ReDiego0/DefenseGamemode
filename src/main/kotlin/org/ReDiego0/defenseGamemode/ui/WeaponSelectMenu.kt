@@ -16,7 +16,11 @@ object WeaponSelectMenu {
         val inv: Inventory = Bukkit.createInventory(null, 54, Component.text(title))
         val data = PlayerDataManager.getPlayerData(player.uniqueId) ?: return
 
-        val availableWeapons = WeaponManager.getWeaponsForClass(data.currentClass)
+        val availableWeapons = WeaponManager.getWeaponsForClass(data.currentClass).filter { weapon ->
+            val levelReqMet = data.level >= weapon.requiredLevel
+            val missionsReqMet = data.missionsCompleted >= weapon.requiredMissions
+            !weapon.isExotic || (levelReqMet && missionsReqMet)
+        }
 
         availableWeapons.forEachIndexed { index, weapon ->
             if (index >= 54) return@forEachIndexed

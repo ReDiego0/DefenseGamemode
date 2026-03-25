@@ -17,7 +17,10 @@ class MenuListener : Listener {
         val titleComponent = event.view.title()
         val title = PlainTextComponentSerializer.plainText().serialize(titleComponent)
 
-        if (title.contains("Seleccionar Clase") || title.contains("Detalles de Clase") || title.contains("Inventario de Expedición") || title.contains("Seleccionar Arma")) {
+        if (title.contains("Seleccionar Clase") || title.contains("Detalles de Clase") ||
+            title.contains("Inventario de Expedición") || title.contains("Seleccionar Arma") ||
+            title.contains("Categorías Exóticas") || title.contains("Armas Exóticas")) {
+
             event.isCancelled = true
 
             val clickedItem = event.currentItem ?: return
@@ -76,6 +79,16 @@ class MenuListener : Listener {
                 player.playSound(player.location, Sound.ITEM_ARMOR_EQUIP_IRON, 1f, 1f)
                 player.sendMessage("§aArma equipada en la ranura ${slotIndex + 1}.")
                 LoadoutMenu.openLoadout(player)
+            } else if (title.contains("Categorías Exóticas")) {
+                if (itemName.contains("Armas Exóticas")) {
+                    player.playSound(player.location, Sound.UI_BUTTON_CLICK, 1f, 1f)
+                    ExoticMenu.openWeaponCategory(player)
+                }
+            } else if (title.contains("Armas Exóticas")) {
+                if (itemName.contains("Volver")) {
+                    player.playSound(player.location, Sound.UI_BUTTON_CLICK, 1f, 1f)
+                    ExoticMenu.openMainMenu(player)
+                }
             }
         }
     }

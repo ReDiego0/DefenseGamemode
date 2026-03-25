@@ -26,9 +26,15 @@ class DefenseCommand : CommandExecutor, TabCompleter {
             "setup" -> handleSetup(sender, args)
             "class" -> handleClassMenu(sender)
             "loadout" -> handleLoadoutMenu(sender)
+            "exotics" -> handleExoticsMenu(sender)
             else -> sendHelp(sender)
         }
         return true
+    }
+
+    private fun handleExoticsMenu(sender: CommandSender) {
+        if (sender !is Player) return
+        org.ReDiego0.defenseGamemode.ui.ExoticMenu.openMainMenu(sender)
     }
 
     private fun handleClassMenu(sender: CommandSender) {
@@ -130,13 +136,14 @@ class DefenseCommand : CommandExecutor, TabCompleter {
         sender.sendMessage("§a/defense party kick <jugador>")
         sender.sendMessage("§a/defense class")
         sender.sendMessage("§a/defense loadout")
+        sender.sendMessage("§a/defense exotics")
     }
 
     override fun onTabComplete(sender: CommandSender, command: Command, label: String, args: Array<out String>): List<String> {
         val completions = mutableListOf<String>()
 
         if (args.size == 1) {
-            val options = mutableListOf("join", "party", "class", "loadout")
+            val options = mutableListOf("join", "party", "class", "loadout", "exotics")
             if (sender.hasPermission("defense.setup")) options.add("setup")
             options.filter { it.startsWith(args[0].lowercase()) }.forEach { completions.add(it) }
         } else if (args.size >= 2) {
