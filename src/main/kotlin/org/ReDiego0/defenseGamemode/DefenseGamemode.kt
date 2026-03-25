@@ -66,5 +66,6 @@ class DefenseGamemode : JavaPlugin() {
     fun loadManagers() {
         MissionManager.loadMissions(this)
         MobManager.loadMobs(this)
+        org.ReDiego0.defenseGamemode.combat.weapons.WeaponManager.loadWeapons(this)
     }
 }

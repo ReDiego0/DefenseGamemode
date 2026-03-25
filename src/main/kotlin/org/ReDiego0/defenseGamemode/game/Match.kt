@@ -1,8 +1,10 @@
 package org.ReDiego0.defenseGamemode.game
 
 import org.ReDiego0.defenseGamemode.DefenseGamemode
+import org.ReDiego0.defenseGamemode.combat.weapons.WeaponManager
 import org.ReDiego0.defenseGamemode.config.LivesType
 import org.ReDiego0.defenseGamemode.config.MissionManager
+import org.ReDiego0.defenseGamemode.player.PlayerDataManager
 import org.ReDiego0.defenseGamemode.world.LocalWorldService
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
@@ -69,6 +71,10 @@ class Match(
                 objective = DefenseObjective(this, config)
                 objective?.spawn()
 
+                players.mapNotNull { Bukkit.getPlayer(it) }.forEach { player ->
+                    giveLoadout(player)
+                }
+
                 waveManager = WaveManager(this, config.baseDifficulty, config.mobPool, config.difficultyProfile)
                 countdown = 15
                 broadcast("§e¡La partida comienza en $countdown segundos! Protege el objetivo.")
@@ -119,6 +125,7 @@ class Match(
 
                 Bukkit.getScheduler().runTaskLater(DefenseGamemode.instance, Runnable {
                     players.mapNotNull { Bukkit.getPlayer(it) }.forEach {
+                        it.inventory.clear()
                         it.gameMode = GameMode.SURVIVAL
                     }
                     LocalWorldService.deleteInstance(world.name)
@@ -126,6 +133,23 @@ class Match(
                 }, 100L)
             }
         }
+    }
+
+    private fun giveLoadout(player: Player) {
+        val data = PlayerDataManager.getPlayerData(player.uniqueId) ?: return
+        player.inventory.clear()
+
+        data.equippedWeapons.forEachIndexed { index, weaponId ->
+            if (weaponId.isNotEmpty()) {
+                val weaponData = data.unlockedWeapons[weaponId]
+                val item = WeaponManager.buildWeaponItem(weaponId, weaponData)
+                if (item != null) {
+                    player.inventory.setItem(index, item)
+                }
+            }
+        }
+
+        player.updateInventory()
     }
 
     private fun processVotingResults() {
@@ -145,6 +169,7 @@ class Match(
 
             player.sendMessage("§aTe has retirado con éxito. ¡Misión completada!")
             val fallbackWorld = Bukkit.getWorlds().first()
+            player.inventory.clear()
             player.teleportAsync(fallbackWorld.spawnLocation)
             removePlayer(player)
         }
@@ -227,6 +252,7 @@ class Match(
                     if (spawnLoc != null) player.teleportAsync(spawnLoc)
                     player.gameMode = GameMode.SURVIVAL
                     deadPlayers.remove(player.uniqueId)
+                    giveLoadout(player)
                     player.sendMessage("§a¡Has reaparecido!")
                 }
             }, 200L)

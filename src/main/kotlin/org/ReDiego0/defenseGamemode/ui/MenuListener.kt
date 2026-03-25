@@ -17,7 +17,7 @@ class MenuListener : Listener {
         val titleComponent = event.view.title()
         val title = PlainTextComponentSerializer.plainText().serialize(titleComponent)
 
-        if (title.contains("Seleccionar Clase") || title.contains("Detalles de Clase") || title.contains("Inventario de Expedición")) {
+        if (title.contains("Seleccionar Clase") || title.contains("Detalles de Clase") || title.contains("Inventario de Expedición") || title.contains("Seleccionar Arma")) {
             event.isCancelled = true
 
             val clickedItem = event.currentItem ?: return
@@ -36,9 +36,7 @@ class MenuListener : Listener {
                     player.playSound(player.location, Sound.ENTITY_VILLAGER_NO, 1f, 1f)
                     player.sendMessage("§cEsta clase está bloqueada.")
                 }
-            }
-
-            else if (title.contains("Detalles de Clase")) {
+            } else if (title.contains("Detalles de Clase")) {
                 val classDisplayName = title.substringAfter(": ").trim()
                 val targetClass = PlayerClass.entries.find { it.displayName == classDisplayName } ?: return
 
@@ -48,20 +46,36 @@ class MenuListener : Listener {
                     player.playSound(player.location, Sound.ENTITY_PLAYER_LEVELUP, 1f, 2f)
                     player.sendMessage("§a¡Has equipado la clase ${targetClass.displayName}!")
                     player.closeInventory()
-                }
-                else if (itemName.contains("Árbol de Habilidades")) {
+                } else if (itemName.contains("Árbol de Habilidades")) {
                     player.playSound(player.location, Sound.UI_BUTTON_CLICK, 1f, 1f)
                     player.sendMessage("§eAbriendo el Árbol de Habilidades... (Próximamente)")
-                }
-                else if (itemName.contains("Volver")) {
+                } else if (itemName.contains("Volver")) {
                     player.playSound(player.location, Sound.UI_BUTTON_CLICK, 1f, 1f)
                     ClassMenu.openMainMenu(player)
                 }
-            }
+            } else if (title.contains("Inventario de Expedición")) {
+                val slot = event.rawSlot
+                if (slot in 10..12) {
+                    player.playSound(player.location, Sound.UI_BUTTON_CLICK, 1f, 1f)
+                    WeaponSelectMenu.open(player, slot - 10)
+                }
+            } else if (title.contains("Seleccionar Arma")) {
+                val data = PlayerDataManager.getPlayerData(player.uniqueId) ?: return
 
-            else if (title.contains("Inventario de Expedición")) {
-                player.playSound(player.location, Sound.UI_BUTTON_CLICK, 1f, 1f)
-                player.sendMessage("§eAbriendo lista de ítems disponibles... (Próximamente)")
+                if (clickedItem.type == org.bukkit.Material.BARRIER) {
+                    player.playSound(player.location, Sound.ENTITY_VILLAGER_NO, 1f, 1f)
+                    return
+                }
+
+                val lore = clickedItem.itemMeta.lore ?: return
+                val idLine = lore.find { it.startsWith("§8ID: ") } ?: return
+                val weaponId = idLine.substringAfter("§8ID: ")
+                val slotIndex = title.substringAfter("(").substringBefore(")").toIntOrNull() ?: 0
+
+                data.equippedWeapons[slotIndex] = weaponId
+                player.playSound(player.location, Sound.ITEM_ARMOR_EQUIP_IRON, 1f, 1f)
+                player.sendMessage("§aArma equipada en la ranura ${slotIndex + 1}.")
+                LoadoutMenu.openLoadout(player)
             }
         }
     }
