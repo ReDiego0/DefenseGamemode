@@ -10,16 +10,23 @@ data class Consumable(
     val id: String,
     val displayName: String,
     val material: Material,
-    val matchAmount: Int
+    val matchAmount: Int,
+    val requiredLevel: Int = 1,
+    val requiredMissions: Int = 0,
+    val isExotic: Boolean = false
 )
 
 object ConsumableManager {
     private val consumables = mutableMapOf<String, Consumable>()
 
     init {
-        consumables["pocion_curacion"] = Consumable("pocion_curacion", "§aPoción de Curación", Material.HONEY_BOTTLE, 4)
-        consumables["bomba_rango_bajo"] = Consumable("bomba_rango_bajo", "§cBomba de Rango Bajo", Material.SNOWBALL, 3)
+        consumables["pocion_curacion"] = Consumable("pocion_curacion", "§aPoción de Curación", Material.HONEY_BOTTLE, 4, 1, 0, false)
+        consumables["bomba_rango_bajo"] = Consumable("bomba_rango_bajo", "§cBomba de Rango Bajo", Material.SNOWBALL, 3, 2, 0, false)
     }
+
+    fun getConsumable(id: String): Consumable? = consumables[id]
+
+    fun getAllConsumables(): List<Consumable> = consumables.values.toList()
 
     fun buildConsumableItem(id: String): ItemStack? {
         val consumable = consumables[id] ?: return null
@@ -31,6 +38,16 @@ object ConsumableManager {
         val key = NamespacedKey(DefenseGamemode.instance, "consumable_id")
         meta.persistentDataContainer.set(key, PersistentDataType.STRING, id)
 
+        item.itemMeta = meta
+        return item
+    }
+
+    fun buildConsumableIcon(id: String): ItemStack? {
+        val consumable = consumables[id] ?: return null
+        val item = ItemStack(consumable.material)
+        val meta = item.itemMeta ?: return null
+
+        meta.setDisplayName(consumable.displayName)
         item.itemMeta = meta
         return item
     }
