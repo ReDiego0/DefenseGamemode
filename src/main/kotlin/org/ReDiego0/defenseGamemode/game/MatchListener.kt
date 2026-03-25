@@ -2,9 +2,11 @@ package org.ReDiego0.defenseGamemode.game
 
 import org.bukkit.entity.Damageable
 import org.bukkit.entity.Player
+import org.bukkit.entity.Projectile
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
+import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.EntityDeathEvent
 
@@ -27,6 +29,15 @@ class MatchListener : Listener {
             }
         } else {
             if (match.objective?.entity == entity) {
+
+                if (event is EntityDamageByEntityEvent) {
+                    val damager = event.damager
+                    if (damager is Player || (damager is Projectile && damager.shooter is Player)) {
+                        event.isCancelled = true
+                        return
+                    }
+                }
+
                 val damageable = entity as? Damageable ?: return
                 if (damageable.health - event.finalDamage <= 0) {
                     event.isCancelled = true
@@ -36,10 +47,11 @@ class MatchListener : Listener {
                         match.objective?.updateHealthDisplay()
                     }, 1L)
                 }
-            } else if (match.state == MatchState.ACTIVE_WAVE && entity is org.bukkit.entity.Mob) {
-                if (event is org.bukkit.event.entity.EntityDamageByEntityEvent) {
+            }
+            else if (match.state == MatchState.ACTIVE_WAVE && entity is org.bukkit.entity.Mob) {
+                if (event is EntityDamageByEntityEvent) {
                     var damager = event.damager
-                    if (damager is org.bukkit.entity.Projectile && damager.shooter is Player) {
+                    if (damager is Projectile && damager.shooter is Player) {
                         damager = damager.shooter as Player
                     }
                     if (damager is Player) {
@@ -78,7 +90,6 @@ class MatchListener : Listener {
                 event.drops.clear()
                 event.droppedExp = 0
 
-                if (event is org.bukkit.event.entity.PlayerDeathEvent) return
                 val deathMessageEvent = event as? org.bukkit.event.entity.EntityDeathEvent
                 deathMessageEvent?.let { it.isCancelled = false }
 

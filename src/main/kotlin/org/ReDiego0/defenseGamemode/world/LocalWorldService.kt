@@ -48,7 +48,14 @@ object LocalWorldService {
                     world.setGameRule(org.bukkit.GameRules.SHOW_DEATH_MESSAGES, false)
                     world.setGameRule(org.bukkit.GameRules.MOB_DROPS, false)
                     world.setGameRule(org.bukkit.GameRules.KEEP_INVENTORY, true)
+                    world.setGameRule(org.bukkit.GameRules.SPAWN_MOBS, false)
+                    world.setGameRule(org.bukkit.GameRules.ADVANCE_TIME, false)
+                    world.setGameRule(org.bukkit.GameRules.ADVANCE_WEATHER, false)
+                    world.setGameRule(org.bukkit.GameRules.SHOW_ADVANCEMENT_MESSAGES, false)
+                    world.time = 6000
+
                     activeInstances[instanceId] = templateName
+                    WorldGuardManager.applyInstanceRules(world)
                 }
 
                 future.complete(world)
@@ -86,6 +93,9 @@ object LocalWorldService {
                     world.isAutoSave = false
                     world.setGameRule(org.bukkit.GameRules.SHOW_DEATH_MESSAGES, false)
                     world.setGameRule(org.bukkit.GameRules.MOB_DROPS, false)
+                    world.setGameRule(org.bukkit.GameRules.ADVANCE_TIME, false)
+                    world.setGameRule(org.bukkit.GameRules.ADVANCE_WEATHER, false)
+                    world.time = 6000
                 }
 
                 future.complete(world)
