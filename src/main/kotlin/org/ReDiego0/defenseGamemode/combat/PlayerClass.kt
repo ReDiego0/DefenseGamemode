@@ -7,23 +7,23 @@ enum class PlayerClass(
 ) {
     INICIADO(
         "iniciado",
-        "Iniciado",
-        "Clase básica. Aprende los fundamentos del combate."
+        "§7Iniciado",
+        "Clase básica. Aprende los fundamentos del combate y la supervivencia."
     ),
-    TANQUE(
-        "tanque",
-        "Tanque",
-        "Especialista en mitigar daño, atraer la atención y aguantar golpes."
+    GUARDIAN(
+        "guardian",
+        "§6Guardián",
+        "Usa escudo y lanza. Especialista en atraer la atención y aguantar el daño."
     ),
-    SOPORTE(
-        "soporte",
-        "Soporte",
-        "Ayuda a sus aliados con curaciones y debilita a las hordas enemigas."
+    MAGO(
+        "mago",
+        "§bMago",
+        "Usa grimorios. Aplica buffos vitales a aliados y debilita a las hordas."
     ),
-    DANO(
-        "dano",
-        "Daño",
-        "Especialista ágil enfocado en infligir daño masivo en área."
+    CABALLERO(
+        "caballero",
+        "§cCaballero",
+        "Usa espadones. Enfocado en generar daño masivo de área y control."
     );
 
     companion object {

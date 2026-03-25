@@ -36,7 +36,7 @@ class InputListener(private val combatManager: CombatManager) : Listener {
 
         if (match != null && match.state == MatchState.ACTIVE_WAVE) {
             event.isCancelled = true
-            combatManager.handleSkill1(player)
+            combatManager.executeSkillQ(player)
         }
     }
 
@@ -47,7 +47,7 @@ class InputListener(private val combatManager: CombatManager) : Listener {
 
         if (match != null && match.state == MatchState.ACTIVE_WAVE) {
             event.isCancelled = true
-            combatManager.handleSkill2(player)
+            combatManager.executeSkillF(player)
         }
     }
 

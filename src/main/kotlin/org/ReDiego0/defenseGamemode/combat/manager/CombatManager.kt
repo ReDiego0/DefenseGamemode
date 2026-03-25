@@ -11,6 +11,7 @@ import org.bukkit.util.Vector
 class CombatManager(private val plugin: DefenseGamemode) {
 
     private val skillManager = SkillManager(plugin)
+    private val classSkillManager = ClassSkillManager()
 
     fun handleSkill1(player: Player) {
         if (plugin.cooldownManager.checkAndNotify(player, CooldownManager.CooldownType.SKILL_1)) return
@@ -106,5 +107,13 @@ class CombatManager(private val plugin: DefenseGamemode) {
                 player.playSound(player.location, org.bukkit.Sound.ENTITY_SNOWBALL_THROW, 1f, 0.5f)
             }
         }
+    }
+
+    fun executeSkillQ(player: org.bukkit.entity.Player) {
+        classSkillManager.executeSkillQ(player)
+    }
+
+    fun executeSkillF(player: org.bukkit.entity.Player) {
+        classSkillManager.executeSkillF(player)
     }
 }

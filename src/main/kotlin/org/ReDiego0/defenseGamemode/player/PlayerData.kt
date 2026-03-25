@@ -42,9 +42,9 @@ data class PlayerData(
 
     private fun checkClassUnlocks() {
         if (level >= 5) {
-            unlockedClasses.add("tanque")
-            unlockedClasses.add("soporte")
-            unlockedClasses.add("dano")
+            unlockedClasses.add("guardian")
+            unlockedClasses.add("mago")
+            unlockedClasses.add("caballero")
         }
     }
 }
