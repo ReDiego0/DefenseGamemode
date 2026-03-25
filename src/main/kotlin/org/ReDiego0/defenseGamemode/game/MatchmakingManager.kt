@@ -1,5 +1,7 @@
 package org.ReDiego0.defenseGamemode.game
 
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.minimessage.MiniMessage
 import org.ReDiego0.defenseGamemode.DefenseGamemode
 import org.ReDiego0.defenseGamemode.config.MissionConfig
 import org.ReDiego0.defenseGamemode.config.MissionManager
@@ -51,16 +53,35 @@ object MatchmakingManager {
         queue.addParty(party)
     }
 
+    fun forceStartQueue(mapName: String, player: Player) {
+        val queue = activeQueues[mapName]
+        if (queue == null) {
+            player.sendMessage("§cLa cola para este mapa ya no existe o ya ha iniciado.")
+            return
+        }
+
+        if (!queue.waitingPlayers.contains(player.uniqueId)) {
+            player.sendMessage("§cNo estás en la sala de espera de este mapa.")
+            return
+        }
+
+        queue.forceStart()
+    }
+
     class LobbyQueue(val mapName: String, val config: MissionConfig) {
         val waitingPlayers = mutableSetOf<UUID>()
         private var task: BukkitTask? = null
         private var countdown = 30
+        private var isStarting = false
 
         fun isFull(): Boolean = waitingPlayers.size >= config.maxPlayers
 
         fun addParty(party: Party) {
             waitingPlayers.addAll(party.members)
-            broadcast("§e${party.members.size} jugador(es) se unieron a la cola para §b$mapName§e. (${waitingPlayers.size}/${config.maxPlayers})")
+
+            val mm = MiniMessage.miniMessage()
+            val messageString = "<yellow>${party.members.size} jugador(es) se unieron a la cola para <aqua>$mapName</aqua>. (${waitingPlayers.size}/${config.maxPlayers}) <hover:show_text:'<green>Haz clic para saltar la espera'><click:run_command:'/defense forcestart $mapName'><green><bold>[▶ EMPEZAR AHORA]</bold></green></click></hover>"
+            broadcast(mm.deserialize(messageString))
 
             if (waitingPlayers.size >= config.maxPlayers) {
                 countdown = 5
@@ -72,8 +93,18 @@ object MatchmakingManager {
             }
         }
 
+        fun forceStart() {
+            if (isStarting) return
+            isStarting = true
+            task?.cancel()
+            activeQueues.remove(mapName)
+            broadcast("§a¡Inicio forzado! Preparando misión...")
+            createAndJoinInstance(waitingPlayers.toList())
+        }
+
         private fun startTimer() {
             task = Bukkit.getScheduler().runTaskTimer(DefenseGamemode.instance, Runnable {
+                if (isStarting) return@Runnable
                 countdown--
 
                 if (countdown == 15 || countdown == 10 || (countdown <= 5 && countdown > 0)) {
@@ -81,6 +112,7 @@ object MatchmakingManager {
                 }
 
                 if (countdown <= 0) {
+                    isStarting = true
                     task?.cancel()
                     activeQueues.remove(mapName)
                     createAndJoinInstance(waitingPlayers.toList())
@@ -90,6 +122,10 @@ object MatchmakingManager {
 
         private fun broadcast(message: String) {
             waitingPlayers.mapNotNull { Bukkit.getPlayer(it) }.forEach { it.sendMessage(message) }
+        }
+
+        private fun broadcast(component: Component) {
+            waitingPlayers.mapNotNull { Bukkit.getPlayer(it) }.forEach { it.sendMessage(component) }
         }
 
         private fun createAndJoinInstance(playersToJoin: List<UUID>) {

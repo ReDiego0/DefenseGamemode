@@ -29,9 +29,16 @@ class DefenseCommand : CommandExecutor, TabCompleter {
             "loadout" -> handleLoadoutMenu(sender)
             "exotics" -> handleExoticsMenu(sender)
             "level" -> handleLevel(sender, args)
+            "forcestart" -> handleForceStart(sender, args)
             else -> sendHelp(sender)
         }
         return true
+    }
+
+    private fun handleForceStart(sender: CommandSender, args: Array<out String>) {
+        if (sender !is Player) return
+        if (args.size < 2) return
+        MatchmakingManager.forceStartQueue(args[1], sender)
     }
 
     private fun handleExoticsMenu(sender: CommandSender) {
