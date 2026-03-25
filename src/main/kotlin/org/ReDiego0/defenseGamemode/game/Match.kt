@@ -113,6 +113,7 @@ class Match(
                         }
                     }
                     if (countdown <= 0) {
+                        matchTask?.cancel()
                         processVotingResults()
                     }
                 }, 0L, 20L)

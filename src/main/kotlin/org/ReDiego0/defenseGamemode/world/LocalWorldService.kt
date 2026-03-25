@@ -113,14 +113,15 @@ object LocalWorldService {
         val fallbackWorld = Bukkit.getWorlds().first()
         world.players.forEach { it.teleportAsync(fallbackWorld.spawnLocation) }
 
-        Bukkit.getScheduler().runTask(plugin, Runnable {
-            Bukkit.unloadWorld(world, false)
-
-            Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, Runnable {
-                val worldFolder = File(plugin.server.worldContainer, setupInstanceId)
-                deleteWorldFolderSafe(worldFolder)
-            }, 100L)
-        })
+        Bukkit.getScheduler().runTaskLater(plugin, Runnable {
+            val unloaded = Bukkit.unloadWorld(world, false)
+            if (unloaded) {
+                Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, Runnable {
+                    val worldFolder = File(plugin.server.worldContainer, setupInstanceId)
+                    deleteWorldFolderSafe(worldFolder)
+                }, 100L)
+            }
+        }, 20L)
     }
 
     private fun copyWorldFolder(source: File, target: File) {
@@ -146,17 +147,19 @@ object LocalWorldService {
         val fallbackWorld = Bukkit.getWorlds().first()
 
         world.players.forEach { it.teleportAsync(fallbackWorld.spawnLocation) }
-
-        Bukkit.getScheduler().runTask(plugin, Runnable {
-            Bukkit.unloadWorld(world, false)
+        Bukkit.getScheduler().runTaskLater(plugin, Runnable {
+            val unloaded = Bukkit.unloadWorld(world, false)
             activeInstances.remove(instanceId)
 
-            // Incrementado a 100 ticks (5 segundos) para asegurar que el I/O de Minecraft libere los archivos
-            Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, Runnable {
-                val worldFolder = File(plugin.server.worldContainer, instanceId)
-                deleteWorldFolderSafe(worldFolder)
-            }, 100L)
-        })
+            if (unloaded) {
+                Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, Runnable {
+                    val worldFolder = File(plugin.server.worldContainer, instanceId)
+                    deleteWorldFolderSafe(worldFolder)
+                }, 100L)
+            } else {
+                plugin.logger.warning("No se pudo descargar el mundo $instanceId. Es posible que queden entidades dentro.")
+            }
+        }, 20L)
     }
 
     private fun deleteWorldFolderSafe(folder: File) {
