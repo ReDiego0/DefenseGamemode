@@ -47,6 +47,8 @@ class MenuListener : Listener {
                 if (itemName.contains("Equipar Clase")) {
                     data.currentClass = targetClass.id
                     data.validateLoadoutOnClassChange()
+                    PlayerDataManager.savePlayerAsync(player.uniqueId)
+
                     player.playSound(player.location, Sound.ENTITY_PLAYER_LEVELUP, 1f, 2f)
                     player.sendMessage("§a¡Has equipado la clase ${targetClass.displayName}!")
                     player.closeInventory()
@@ -83,6 +85,8 @@ class MenuListener : Listener {
                 val armorId = idLine.substringAfter("§8ID: ")
 
                 data.equippedArmor[0] = armorId
+                PlayerDataManager.savePlayerAsync(player.uniqueId)
+
                 player.playSound(player.location, Sound.ITEM_ARMOR_EQUIP_IRON, 1f, 1f)
                 player.sendMessage("§aArmadura equipada.")
                 LoadoutMenu.openLoadout(player)
@@ -98,6 +102,8 @@ class MenuListener : Listener {
                 val slotIndex = title.substringAfter("(").substringBefore(")").toIntOrNull() ?: 0
 
                 data.equippedConsumables[slotIndex] = consumableId
+                PlayerDataManager.savePlayerAsync(player.uniqueId)
+
                 player.playSound(player.location, Sound.ITEM_ARMOR_EQUIP_CHAIN, 1f, 1f)
                 player.sendMessage("§aConsumible equipado en la ranura ${slotIndex + 1}.")
                 LoadoutMenu.openLoadout(player)
@@ -113,6 +119,8 @@ class MenuListener : Listener {
                 val slotIndex = title.substringAfter("(").substringBefore(")").toIntOrNull() ?: 0
 
                 data.equippedWeapons[slotIndex] = weaponId
+                PlayerDataManager.savePlayerAsync(player.uniqueId)
+
                 player.playSound(player.location, Sound.ITEM_ARMOR_EQUIP_IRON, 1f, 1f)
                 player.sendMessage("§aArma equipada en la ranura ${slotIndex + 1}.")
                 LoadoutMenu.openLoadout(player)

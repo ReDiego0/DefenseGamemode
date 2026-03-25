@@ -50,16 +50,16 @@ data class PlayerData(
     }
 
     fun validateLoadoutOnClassChange() {
-        for (i in equippedWeapons.indices) {
-            val weaponId = equippedWeapons[i]
-            if (weaponId.isNotEmpty()) {
-                val weaponConfig = WeaponManager.getWeapon(weaponId)
-                if (weaponConfig != null && !weaponConfig.isExotic) {
-                    if (weaponConfig.classRequirement != null && weaponConfig.classRequirement != currentClass) {
-                        equippedWeapons[i] = ""
+        equippedWeapons = equippedWeapons.map { weaponId ->
+            if (weaponId.isNotBlank()) {
+                val config = WeaponManager.getWeapon(weaponId)
+                if (config != null && !config.isExotic && config.classRequirement != null) {
+                    if (!config.classRequirement.equals(currentClass, ignoreCase = true)) {
+                        return@map ""
                     }
                 }
             }
-        }
+            weaponId
+        }.toMutableList()
     }
 }
