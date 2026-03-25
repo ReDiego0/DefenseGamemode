@@ -46,6 +46,7 @@ class MenuListener : Listener {
 
                 if (itemName.contains("Equipar Clase")) {
                     data.currentClass = targetClass.id
+                    data.validateLoadoutOnClassChange()
                     player.playSound(player.location, Sound.ENTITY_PLAYER_LEVELUP, 1f, 2f)
                     player.sendMessage("§a¡Has equipado la clase ${targetClass.displayName}!")
                     player.closeInventory()

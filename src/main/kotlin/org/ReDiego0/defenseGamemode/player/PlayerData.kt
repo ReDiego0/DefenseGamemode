@@ -1,5 +1,6 @@
 package org.ReDiego0.defenseGamemode.player
 
+import org.ReDiego0.defenseGamemode.combat.weapons.WeaponManager
 import java.util.UUID
 
 data class WeaponData(
@@ -45,6 +46,20 @@ data class PlayerData(
             unlockedClasses.add("guardian")
             unlockedClasses.add("mago")
             unlockedClasses.add("caballero")
+        }
+    }
+
+    fun validateLoadoutOnClassChange() {
+        for (i in equippedWeapons.indices) {
+            val weaponId = equippedWeapons[i]
+            if (weaponId.isNotEmpty()) {
+                val weaponConfig = WeaponManager.getWeapon(weaponId)
+                if (weaponConfig != null && !weaponConfig.isExotic) {
+                    if (weaponConfig.classRequirement != null && weaponConfig.classRequirement != currentClass) {
+                        equippedWeapons[i] = ""
+                    }
+                }
+            }
         }
     }
 }
