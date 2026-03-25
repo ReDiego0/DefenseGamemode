@@ -3,12 +3,24 @@ package org.ReDiego0.defenseGamemode.game
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
+import org.ReDiego0.defenseGamemode.DefenseGamemode
 import org.ReDiego0.defenseGamemode.config.MobEntry
+import org.ReDiego0.defenseGamemode.config.MobManager
+import org.bukkit.Bukkit
 import org.bukkit.Location
+import org.bukkit.NamespacedKey
+import org.bukkit.Particle
 import org.bukkit.attribute.Attribute
+import org.bukkit.boss.BarColor
+import org.bukkit.boss.BarStyle
+import org.bukkit.boss.BossBar
 import org.bukkit.entity.EntityType
 import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Player
+import org.bukkit.persistence.PersistentDataType
+import org.bukkit.scheduler.BukkitTask
+import java.util.UUID
+import kotlin.math.pow
 import kotlin.random.Random
 
 class WaveManager(
@@ -20,14 +32,14 @@ class WaveManager(
     private var currentWave = 0
     private var targetKills = 0
     private var currentKills = 0
-    private var waveBossBar: org.bukkit.boss.BossBar? = null
+    private var waveBossBar: BossBar? = null
 
-    private var aiTask: org.bukkit.scheduler.BukkitTask? = null
-    private val aggroTimers = mutableMapOf<java.util.UUID, Long>()
+    private var aiTask: BukkitTask? = null
+    private val aggroTimers = mutableMapOf<UUID, Long>()
 
     private var mobsLeftToSpawn = 0
     private var activeSpawns = 0
-    private var spawnTask: org.bukkit.scheduler.BukkitTask? = null
+    private var spawnTask: BukkitTask? = null
 
     fun startNextWave() {
         currentWave++
@@ -37,16 +49,16 @@ class WaveManager(
         val currentTier = baseDifficulty + (currentWave / 5)
 
         if (waveBossBar == null) {
-            waveBossBar = org.bukkit.Bukkit.createBossBar(
+            waveBossBar = Bukkit.createBossBar(
                 "§c⚔ Oleada $currentWave ⚔",
-                org.bukkit.boss.BarColor.RED,
-                org.bukkit.boss.BarStyle.SOLID
+                BarColor.RED,
+                BarStyle.SOLID
             )
         } else {
             waveBossBar?.setTitle("§c⚔ Oleada $currentWave ⚔")
         }
 
-        match.players.mapNotNull { org.bukkit.Bukkit.getPlayer(it) }.forEach { player ->
+        match.players.mapNotNull { Bukkit.getPlayer(it) }.forEach { player ->
             waveBossBar?.addPlayer(player)
         }
         waveBossBar?.progress = 1.0
@@ -56,7 +68,7 @@ class WaveManager(
     }
 
     private fun spawnWave(level: Int, maxTier: Int) {
-        val pool = org.ReDiego0.defenseGamemode.config.MobManager.getPool(mobPoolId) ?: return
+        val pool = MobManager.getPool(mobPoolId) ?: return
         val validMobs = pool.getMobsForTier(maxTier)
 
         if (validMobs.isEmpty()) return
@@ -68,7 +80,6 @@ class WaveManager(
         }
 
         targetKills = 10 + (currentWave * 2) + (match.players.size * 5)
-
         mobsLeftToSpawn = (targetKills * 1.3).toInt()
         currentKills = 0
         activeSpawns = 0
@@ -79,7 +90,7 @@ class WaveManager(
         val absoluteMaxConcurrent = 12 + (match.players.size * 3)
         var currentMaxConcurrent = 3
 
-        spawnTask = org.bukkit.Bukkit.getScheduler().runTaskTimer(org.ReDiego0.defenseGamemode.DefenseGamemode.instance, Runnable {
+        spawnTask = Bukkit.getScheduler().runTaskTimer(DefenseGamemode.instance, Runnable {
             if (match.state != MatchState.ACTIVE_WAVE) {
                 spawnTask?.cancel()
                 return@Runnable
@@ -126,7 +137,16 @@ class WaveManager(
             val entity = location.world.spawnEntity(location, entityType) as? LivingEntity ?: return
 
             applyLevelScaling(entity, level)
-            setupHologram(entity, mobEntry.id, level)
+
+            val pdc = entity.persistentDataContainer
+            val levelKey = NamespacedKey(DefenseGamemode.instance, "mob_level")
+            val nameKey = NamespacedKey(DefenseGamemode.instance, "mob_name")
+            val formattedName = mobEntry.id.replace("_", " ").replaceFirstChar { it.uppercase() }
+
+            pdc.set(levelKey, PersistentDataType.INTEGER, level)
+            pdc.set(nameKey, PersistentDataType.STRING, formattedName)
+
+            updateMobHologram(entity)
 
             val mob = entity as? org.bukkit.entity.Mob
             if (mob != null) {
@@ -135,29 +155,59 @@ class WaveManager(
             }
 
         } catch (e: IllegalArgumentException) {
-            println("Pendiente: Integrar MythicMobs/LevelledMobs para el id ${mobEntry.id}")
         }
     }
 
-    private fun applyLevelScaling(entity: LivingEntity, level: Int) {
-        val baseHealth = entity.getAttribute(Attribute.MAX_HEALTH)?.baseValue ?: 20.0
-        val newHealth = baseHealth + (level * 2.0)
+    private fun applyLevelScaling(entity: LivingEntity, wave: Int) {
+        val baseMissionMult = 0.5 + ((baseDifficulty - 1) * 0.2)
+        val waveZeroIndexed = (wave - 1).toDouble().coerceAtLeast(0.0)
+        val waveMult = 1.0 + (waveZeroIndexed * 0.03) + (waveZeroIndexed.pow(2.0) * 0.0015)
+        val totalMultiplier = baseMissionMult * waveMult
 
-        entity.getAttribute(Attribute.MAX_HEALTH)?.baseValue = newHealth
-        entity.health = newHealth
+        val healthAttr = entity.getAttribute(Attribute.MAX_HEALTH)
+        if (healthAttr != null) {
+            val newHealth = (healthAttr.baseValue * totalMultiplier).coerceAtLeast(1.0)
+            healthAttr.baseValue = newHealth
+            entity.health = newHealth
+        }
 
         val dmgAttr = entity.getAttribute(Attribute.ATTACK_DAMAGE)
         if (dmgAttr != null) {
-            dmgAttr.baseValue += (level * 0.5)
+            val newDmg = (dmgAttr.baseValue * totalMultiplier).coerceAtLeast(1.0)
+            dmgAttr.baseValue = newDmg
         }
     }
 
-    private fun setupHologram(entity: LivingEntity, name: String, level: Int) {
-        val formattedName = name.replace("_", " ").replaceFirstChar { it.uppercase() }
+    fun updateMobHologram(entity: LivingEntity) {
+        val pdc = entity.persistentDataContainer
+        val levelKey = NamespacedKey(DefenseGamemode.instance, "mob_level")
+        val nameKey = NamespacedKey(DefenseGamemode.instance, "mob_name")
+
+        val level = pdc.get(levelKey, PersistentDataType.INTEGER) ?: return
+        val name = pdc.get(nameKey, PersistentDataType.STRING) ?: return
+
+        val maxHealth = entity.getAttribute(Attribute.MAX_HEALTH)?.value ?: 20.0
+        val currentHealth = entity.health.coerceAtLeast(0.0)
+
+        val percentage = currentHealth / maxHealth
+        val color = when {
+            percentage > 0.66 -> NamedTextColor.GREEN
+            percentage > 0.33 -> NamedTextColor.YELLOW
+            else -> NamedTextColor.RED
+        }
+
+        val totalBars = 5
+        val activeBars = (percentage * totalBars).toInt().coerceIn(0, totalBars)
+        val barString = "█".repeat(activeBars) + "░".repeat(totalBars - activeBars)
 
         val customName = Component.text()
-            .append(Component.text("[Lv. $level] ", NamedTextColor.YELLOW, TextDecoration.BOLD))
-            .append(Component.text(formattedName, NamedTextColor.RED))
+            .append(Component.text("[Lv. $level] ", NamedTextColor.GOLD, TextDecoration.BOLD))
+            .append(Component.text(name, NamedTextColor.WHITE))
+            .append(Component.text(" [", NamedTextColor.DARK_GRAY))
+            .append(Component.text(barString, color))
+            .append(Component.text("] ", NamedTextColor.DARK_GRAY))
+            .append(Component.text("${currentHealth.toInt()}", color))
+            .append(Component.text("❤", NamedTextColor.RED))
             .build()
 
         entity.customName(customName)
@@ -194,9 +244,9 @@ class WaveManager(
         waveBossBar?.progress = progress
 
         when {
-            progress > 0.5 -> waveBossBar?.color = org.bukkit.boss.BarColor.RED
-            progress > 0.2 -> waveBossBar?.color = org.bukkit.boss.BarColor.YELLOW
-            else -> waveBossBar?.color = org.bukkit.boss.BarColor.GREEN
+            progress > 0.5 -> waveBossBar?.color = BarColor.RED
+            progress > 0.2 -> waveBossBar?.color = BarColor.YELLOW
+            else -> waveBossBar?.color = BarColor.GREEN
         }
     }
 
@@ -219,7 +269,7 @@ class WaveManager(
         if (currentWave % wavesPerRot == 0) {
             match.changeState(MatchState.VOTING)
         } else {
-            org.bukkit.Bukkit.getScheduler().runTaskLater(org.ReDiego0.defenseGamemode.DefenseGamemode.instance, Runnable {
+            Bukkit.getScheduler().runTaskLater(DefenseGamemode.instance, Runnable {
                 if (match.state == MatchState.ACTIVE_WAVE) {
                     match.changeState(MatchState.ACTIVE_WAVE)
                 }
@@ -230,7 +280,7 @@ class WaveManager(
     private fun clearRemainingMobs() {
         match.world.livingEntities.forEach { entity ->
             if (entity !is Player && entity != match.objective?.entity) {
-                entity.world.spawnParticle(org.bukkit.Particle.CLOUD, entity.location, 10, 0.5, 0.5, 0.5, 0.1)
+                entity.world.spawnParticle(Particle.CLOUD, entity.location, 10, 0.5, 0.5, 0.5, 0.1)
                 entity.remove()
             }
         }
@@ -242,7 +292,7 @@ class WaveManager(
     }
 
     private fun startSwarmAI() {
-        aiTask = org.bukkit.Bukkit.getScheduler().runTaskTimer(org.ReDiego0.defenseGamemode.DefenseGamemode.instance, Runnable {
+        aiTask = Bukkit.getScheduler().runTaskTimer(DefenseGamemode.instance, Runnable {
             val objectiveEntity = match.objective?.entity ?: return@Runnable
             val currentTime = System.currentTimeMillis()
 

@@ -49,6 +49,9 @@ class MatchListener : Listener {
                 }
             }
             else if (match.state == MatchState.ACTIVE_WAVE && entity is org.bukkit.entity.Mob) {
+                org.bukkit.Bukkit.getScheduler().runTaskLater(org.ReDiego0.defenseGamemode.DefenseGamemode.instance, Runnable {
+                    match.waveManager?.updateMobHologram(entity)
+                }, 1L)
                 if (event is EntityDamageByEntityEvent) {
                     var damager = event.damager
                     if (damager is Projectile && damager.shooter is Player) {
