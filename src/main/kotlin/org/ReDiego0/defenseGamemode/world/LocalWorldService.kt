@@ -5,6 +5,7 @@ import org.bukkit.World
 import org.bukkit.WorldCreator
 import org.bukkit.plugin.Plugin
 import java.io.File
+import java.io.IOException
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
@@ -118,7 +119,7 @@ object LocalWorldService {
             Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, Runnable {
                 val worldFolder = File(plugin.server.worldContainer, setupInstanceId)
                 deleteWorldFolderSafe(worldFolder)
-            }, 60L)
+            }, 100L)
         })
     }
 
@@ -150,20 +151,24 @@ object LocalWorldService {
             Bukkit.unloadWorld(world, false)
             activeInstances.remove(instanceId)
 
+            // Incrementado a 100 ticks (5 segundos) para asegurar que el I/O de Minecraft libere los archivos
             Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, Runnable {
                 val worldFolder = File(plugin.server.worldContainer, instanceId)
                 deleteWorldFolderSafe(worldFolder)
-            }, 60L)
+            }, 100L)
         })
     }
 
     private fun deleteWorldFolderSafe(folder: File) {
+        if (!folder.exists()) return
         if (folder.isDirectory) {
             folder.listFiles()?.forEach { deleteWorldFolderSafe(it) }
         }
         try {
             folder.delete()
+        } catch (e: IOException) {
         } catch (e: Exception) {
+            plugin.logger.warning("No se pudo eliminar completamente la carpeta ${folder.name}")
         }
     }
 

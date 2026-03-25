@@ -41,9 +41,13 @@ class WaveManager(
     private var activeSpawns = 0
     private var spawnTask: BukkitTask? = null
 
+    // Cerrojo de seguridad para evitar múltiples llamadas a finishWave
+    private var isWaveActive = false
+
     fun startNextWave() {
         currentWave++
         match.currentWave = currentWave
+        isWaveActive = true
 
         val currentLevel = currentWave
         val currentTier = baseDifficulty + (currentWave / 5)
@@ -91,7 +95,7 @@ class WaveManager(
         var currentMaxConcurrent = 3
 
         spawnTask = Bukkit.getScheduler().runTaskTimer(DefenseGamemode.instance, Runnable {
-            if (match.state != MatchState.ACTIVE_WAVE) {
+            if (match.state != MatchState.ACTIVE_WAVE || !isWaveActive) {
                 spawnTask?.cancel()
                 return@Runnable
             }
@@ -215,6 +219,8 @@ class WaveManager(
     }
 
     fun handleMobDeath() {
+        if (!isWaveActive) return // Bloquea ejecuciones fantasma si la oleada ya terminó
+
         currentKills++
         activeSpawns--
         updateBossBar()
@@ -222,6 +228,7 @@ class WaveManager(
         val remaining = targetKills - currentKills
 
         if (remaining <= 0) {
+            isWaveActive = false
             finishWave()
         } else if (remaining <= 3 && mobsLeftToSpawn <= 0) {
             highlightRemainingMobs()
@@ -293,6 +300,8 @@ class WaveManager(
 
     private fun startSwarmAI() {
         aiTask = Bukkit.getScheduler().runTaskTimer(DefenseGamemode.instance, Runnable {
+            if (!isWaveActive) return@Runnable
+
             val objectiveEntity = match.objective?.entity ?: return@Runnable
             val currentTime = System.currentTimeMillis()
 
