@@ -160,14 +160,13 @@ class Match(
             player.inventory.boots = org.ReDiego0.defenseGamemode.combat.equipment.ArmorManager.buildPiece(armorSet.boots)
         }
 
-        val defaultConsumables = listOf("pocion_curacion", "bomba_rango_bajo")
-        var consumableSlot = 7
-
-        defaultConsumables.forEach { consumableId ->
-            val item = org.ReDiego0.defenseGamemode.combat.equipment.ConsumableManager.buildConsumableItem(consumableId)
-            if (item != null && consumableSlot <= 8) {
-                player.inventory.setItem(consumableSlot, item)
-                consumableSlot++
+        val hotbarSlots = listOf(3, 4)
+        data.equippedConsumables.forEachIndexed { index, consumableId ->
+            if (index < hotbarSlots.size && consumableId.isNotBlank()) {
+                val item = org.ReDiego0.defenseGamemode.combat.equipment.ConsumableManager.buildConsumableItem(consumableId)
+                if (item != null) {
+                    player.inventory.setItem(hotbarSlots[index], item)
+                }
             }
         }
 
