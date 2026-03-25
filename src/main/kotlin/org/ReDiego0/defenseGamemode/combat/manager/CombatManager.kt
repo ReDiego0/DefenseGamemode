@@ -10,6 +10,8 @@ import org.bukkit.util.Vector
 
 class CombatManager(private val plugin: DefenseGamemode) {
 
+    private val skillManager = SkillManager(plugin)
+
     fun handleSkill1(player: Player) {
         if (plugin.cooldownManager.checkAndNotify(player, CooldownManager.CooldownType.SKILL_1)) return
 
@@ -30,11 +32,11 @@ class CombatManager(private val plugin: DefenseGamemode) {
         plugin.cooldownManager.setCooldown(player.uniqueId, CooldownManager.CooldownType.SKILL_2, 15.0)
     }
 
-    fun handleMythicWeapon(player: Player) {
+    fun handleMythicWeapon(player: Player, skillId: String) {
         if (plugin.cooldownManager.checkAndNotify(player, CooldownManager.CooldownType.MYTHIC_WEAPON)) return
 
-        player.sendMessage("§6[SISTEMA] Has usado el poder de tu Arma Mítica.")
-        plugin.cooldownManager.setCooldown(player.uniqueId, CooldownManager.CooldownType.MYTHIC_WEAPON, 10.0)
+        skillManager.executeWeaponSkill(player, skillId)
+        plugin.cooldownManager.setCooldown(player.uniqueId, CooldownManager.CooldownType.MYTHIC_WEAPON, 12.0)
     }
 
     fun handleDirectionalDash(player: Player) {

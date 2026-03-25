@@ -1,8 +1,11 @@
 package org.ReDiego0.defenseGamemode.combat.listener
 
+import org.ReDiego0.defenseGamemode.DefenseGamemode
 import org.ReDiego0.defenseGamemode.combat.manager.CombatManager
+import org.ReDiego0.defenseGamemode.combat.weapons.WeaponManager
 import org.ReDiego0.defenseGamemode.game.GameManager
 import org.ReDiego0.defenseGamemode.game.MatchState
+import org.bukkit.NamespacedKey
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.block.Action
@@ -11,6 +14,7 @@ import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerSwapHandItemsEvent
 import org.bukkit.event.player.PlayerToggleSneakEvent
 import org.bukkit.inventory.EquipmentSlot
+import org.bukkit.persistence.PersistentDataType
 
 class InputListener(private val combatManager: CombatManager) : Listener {
 
@@ -58,7 +62,19 @@ class InputListener(private val combatManager: CombatManager) : Listener {
 
             if (event.action == Action.RIGHT_CLICK_AIR || event.action == Action.RIGHT_CLICK_BLOCK ||
                 event.action == Action.LEFT_CLICK_AIR || event.action == Action.LEFT_CLICK_BLOCK) {
-                // verificar si el ítem de la mano es Mítico y su habilidad
+
+                val item = player.inventory.itemInMainHand
+                if (item.type.isAir) return
+                val meta = item.itemMeta ?: return
+
+                val key = NamespacedKey(DefenseGamemode.instance, "weapon_id")
+                val weaponId = meta.persistentDataContainer.get(key, PersistentDataType.STRING) ?: return
+
+                val weapon = WeaponManager.getWeapon(weaponId) ?: return
+
+                if (weapon.isExotic && weapon.skillId != null) {
+                    combatManager.handleMythicWeapon(player, weapon.skillId)
+                }
             }
         }
     }
