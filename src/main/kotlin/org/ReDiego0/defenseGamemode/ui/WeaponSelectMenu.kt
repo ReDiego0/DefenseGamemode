@@ -18,7 +18,7 @@ object WeaponSelectMenu {
 
         val availableWeapons = WeaponManager.getWeaponsForClass(data.currentClass).filter { weapon ->
             val levelReqMet = data.level >= weapon.requiredLevel
-            val missionsReqMet = data.missionsCompleted >= weapon.requiredMissions
+            val missionsReqMet = data.getTotalMissionsCompleted() >= weapon.requiredMissions
             !weapon.isExotic || (levelReqMet && missionsReqMet)
         }
 
@@ -26,7 +26,7 @@ object WeaponSelectMenu {
             if (index >= 54) return@forEachIndexed
 
             val levelReqMet = data.level >= weapon.requiredLevel
-            val missionsReqMet = data.missionsCompleted >= weapon.requiredMissions
+            val missionsReqMet = data.getTotalMissionsCompleted() >= weapon.requiredMissions
             val isUnlocked = levelReqMet && missionsReqMet
 
             val item = ItemStack(if (isUnlocked) weapon.material else Material.BARRIER).apply {

@@ -43,7 +43,7 @@ object ExoticMenu {
             if (index >= 54) return@forEachIndexed
 
             val levelReqMet = data.level >= weapon.requiredLevel
-            val missionsReqMet = data.missionsCompleted >= weapon.requiredMissions
+            val missionsReqMet = data.getTotalMissionsCompleted() >= weapon.requiredMissions
             val isUnlocked = levelReqMet && missionsReqMet
 
             val item = ItemStack(if (isUnlocked) weapon.material else Material.GRAY_DYE).apply {
@@ -66,7 +66,7 @@ object ExoticMenu {
                     val levelColor = if (levelReqMet) "§a" else "§c"
                     val missionColor = if (missionsReqMet) "§a" else "§c"
                     lore.add("$levelColor- Nivel: ${data.level} / ${weapon.requiredLevel}")
-                    lore.add("$missionColor- Misiones: ${data.missionsCompleted} / ${weapon.requiredMissions}")
+                    lore.add("$missionColor- Misiones: ${data.getTotalMissionsCompleted()} / ${weapon.requiredMissions}")
                 }
 
                 meta.lore = lore

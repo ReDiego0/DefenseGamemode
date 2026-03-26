@@ -26,11 +26,21 @@ class YamlStorage(private val plugin: DefenseGamemode) : StorageProvider {
         val level = config.getInt("level", 1)
         val exp = config.getDouble("experience", 0.0)
         val kills = config.getInt("totalKills", 0)
-        val missionsCompleted = config.getInt("missionsCompleted", 0)
         val currentClass = config.getString("currentClass", "iniciado") ?: "iniciado"
 
         val unlockedClasses = config.getStringList("unlockedClasses").toMutableSet()
         if (unlockedClasses.isEmpty()) unlockedClasses.add("iniciado")
+
+        val missionsCompleted = mutableMapOf<Int, Int>()
+        val missionsSection = config.getConfigurationSection("missionsCompleted")
+        if (missionsSection != null) {
+            for (key in missionsSection.getKeys(false)) {
+                val levelKey = key.toIntOrNull()
+                if (levelKey != null) {
+                    missionsCompleted[levelKey] = missionsSection.getInt(key)
+                }
+            }
+        }
 
         val unlockedWeapons = mutableMapOf<String, WeaponData>()
         val weaponsSection = config.getConfigurationSection("unlockedWeapons")
@@ -61,7 +71,10 @@ class YamlStorage(private val plugin: DefenseGamemode) : StorageProvider {
         config.set("level", playerData.level)
         config.set("experience", playerData.experience)
         config.set("totalKills", playerData.totalKills)
-        config.set("missionsCompleted", playerData.missionsCompleted)
+
+        val missionsStringKeys = playerData.missionsCompleted.mapKeys { it.key.toString() }
+        config.set("missionsCompleted", missionsStringKeys)
+
         config.set("currentClass", playerData.currentClass)
         config.set("unlockedClasses", playerData.unlockedClasses.toList())
 

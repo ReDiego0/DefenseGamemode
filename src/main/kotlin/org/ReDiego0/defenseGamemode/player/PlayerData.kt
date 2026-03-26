@@ -62,4 +62,8 @@ data class PlayerData(
             weaponId
         }.toMutableList()
     }
+
+    fun getTotalMissionsCompleted(): Int {
+        return missionsCompleted.values.sum()
+    }
 }

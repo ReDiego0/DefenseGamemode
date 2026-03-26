@@ -18,7 +18,7 @@ object ConsumableSelectMenu {
 
         val availableConsumables = ConsumableManager.getAllConsumables().filter { consumable ->
             val levelReqMet = data.level >= consumable.requiredLevel
-            val missionsReqMet = data.missionsCompleted >= consumable.requiredMissions
+            val missionsReqMet = data.getTotalMissionsCompleted() >= consumable.requiredMissions
             !consumable.isExotic || (levelReqMet && missionsReqMet)
         }
 
@@ -26,7 +26,7 @@ object ConsumableSelectMenu {
             if (index >= 54) return@forEachIndexed
 
             val levelReqMet = data.level >= consumable.requiredLevel
-            val missionsReqMet = data.missionsCompleted >= consumable.requiredMissions
+            val missionsReqMet = data.getTotalMissionsCompleted() >= consumable.requiredMissions
             val isUnlocked = levelReqMet && missionsReqMet
 
             val item = ItemStack(if (isUnlocked) consumable.material else Material.BARRIER).apply {

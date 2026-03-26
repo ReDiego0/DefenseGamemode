@@ -18,7 +18,7 @@ object ArmorSelectMenu {
 
         val availableArmors = ArmorManager.getAllArmors().filter { armor ->
             val levelReqMet = data.level >= armor.requiredLevel
-            val missionsReqMet = data.missionsCompleted >= armor.requiredMissions
+            val missionsReqMet = data.getTotalMissionsCompleted() >= armor.requiredMissions
             !armor.isExotic || (levelReqMet && missionsReqMet)
         }
 
@@ -26,7 +26,7 @@ object ArmorSelectMenu {
             if (index >= 54) return@forEachIndexed
 
             val levelReqMet = data.level >= armor.requiredLevel
-            val missionsReqMet = data.missionsCompleted >= armor.requiredMissions
+            val missionsReqMet = data.getTotalMissionsCompleted() >= armor.requiredMissions
             val isUnlocked = levelReqMet && missionsReqMet
 
             val item = ItemStack(if (isUnlocked) armor.iconMaterial else Material.BARRIER).apply {

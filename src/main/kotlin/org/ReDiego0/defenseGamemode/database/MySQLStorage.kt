@@ -29,7 +29,7 @@ class MySQLStorage(
                     "level INT NOT NULL," +
                     "experience DOUBLE NOT NULL," +
                     "totalKills INT NOT NULL," +
-                    "missionsCompleted INT NOT NULL DEFAULT 0," +
+                    "missionsCompleted TEXT," +
                     "currentClass VARCHAR(32) NOT NULL DEFAULT 'iniciado'," +
                     "unlockedClasses TEXT NOT NULL," +
                     "unlockedWeapons TEXT," +
@@ -48,16 +48,17 @@ class MySQLStorage(
             val level = rs.getInt("level")
             val exp = rs.getDouble("experience")
             val kills = rs.getInt("totalKills")
-            val missionsCompleted = rs.getInt("missionsCompleted")
             val currentClass = rs.getString("currentClass") ?: "iniciado"
             val unlockedStr = rs.getString("unlockedClasses") ?: "iniciado"
 
             val unlockedClasses = unlockedStr.split(",").filter { it.isNotEmpty() }.toMutableSet()
             if (unlockedClasses.isEmpty()) unlockedClasses.add("iniciado")
 
+            val missionsType = object : TypeToken<MutableMap<Int, Int>>() {}.type
             val mapType = object : TypeToken<MutableMap<String, WeaponData>>() {}.type
             val listType = object : TypeToken<MutableList<String>>() {}.type
 
+            val missionsCompleted: MutableMap<Int, Int> = gson.fromJson(rs.getString("missionsCompleted") ?: "{}", missionsType) ?: mutableMapOf()
             val unlockedWeapons: MutableMap<String, WeaponData> = gson.fromJson(rs.getString("unlockedWeapons") ?: "{}", mapType) ?: mutableMapOf()
             val equippedWeapons: MutableList<String> = gson.fromJson(rs.getString("equippedWeapons") ?: "[\"\",\"\",\"\"]", listType) ?: mutableListOf("", "", "")
             val equippedArmor: MutableList<String> = gson.fromJson(rs.getString("equippedArmor") ?: "[\"\",\"\",\"\",\"\"]", listType) ?: mutableListOf("", "", "", "")
@@ -74,6 +75,7 @@ class MySQLStorage(
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
                     "ON DUPLICATE KEY UPDATE level = ?, experience = ?, totalKills = ?, missionsCompleted = ?, currentClass = ?, unlockedClasses = ?, unlockedWeapons = ?, equippedWeapons = ?, equippedArmor = ?, equippedConsumables = ?"
         )
+        val missionsJson = gson.toJson(playerData.missionsCompleted)
         val weaponsJson = gson.toJson(playerData.unlockedWeapons)
         val eqWeaponsJson = gson.toJson(playerData.equippedWeapons)
         val eqArmorJson = gson.toJson(playerData.equippedArmor)
@@ -83,7 +85,7 @@ class MySQLStorage(
         statement?.setInt(2, playerData.level)
         statement?.setDouble(3, playerData.experience)
         statement?.setInt(4, playerData.totalKills)
-        statement?.setInt(5, playerData.missionsCompleted)
+        statement?.setString(5, missionsJson)
         statement?.setString(6, playerData.currentClass)
         statement?.setString(7, playerData.unlockedClasses.joinToString(","))
         statement?.setString(8, weaponsJson)
@@ -94,7 +96,7 @@ class MySQLStorage(
         statement?.setInt(12, playerData.level)
         statement?.setDouble(13, playerData.experience)
         statement?.setInt(14, playerData.totalKills)
-        statement?.setInt(15, playerData.missionsCompleted)
+        statement?.setString(15, missionsJson)
         statement?.setString(16, playerData.currentClass)
         statement?.setString(17, playerData.unlockedClasses.joinToString(","))
         statement?.setString(18, weaponsJson)
