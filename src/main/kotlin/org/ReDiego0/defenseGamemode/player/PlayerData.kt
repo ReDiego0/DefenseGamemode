@@ -14,7 +14,7 @@ data class PlayerData(
     var level: Int = 1,
     var experience: Double = 0.0,
     var totalKills: Int = 0,
-    var missionsCompleted: Int = 0,
+    val missionsCompleted: MutableMap<Int, Int> = mutableMapOf(),
     var currentClass: String = "iniciado",
     val unlockedClasses: MutableSet<String> = mutableSetOf("iniciado"),
     val unlockedWeapons: MutableMap<String, WeaponData> = mutableMapOf(),

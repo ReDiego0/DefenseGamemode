@@ -188,6 +188,14 @@ class Match(
         toExtract.forEach { player ->
             giveRewards(player, success = true)
 
+            val data = PlayerDataManager.getPlayerData(player.uniqueId)
+            val difficultyLevel = config?.baseDifficulty ?: 1
+            if (data != null) {
+                val currentCount = data.missionsCompleted.getOrDefault(difficultyLevel, 0)
+                data.missionsCompleted[difficultyLevel] = currentCount + 1
+                PlayerDataManager.savePlayerAsync(player.uniqueId)
+            }
+
             player.sendMessage("§aTe has retirado con éxito. ¡Misión completada!")
             val fallbackWorld = Bukkit.getWorlds().first()
             player.inventory.clear()
