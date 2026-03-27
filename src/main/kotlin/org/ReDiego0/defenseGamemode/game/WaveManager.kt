@@ -41,7 +41,6 @@ class WaveManager(
     private var activeSpawns = 0
     private var spawnTask: BukkitTask? = null
 
-    // Cerrojo de seguridad para evitar múltiples llamadas a finishWave
     private var isWaveActive = false
 
     fun startNextWave() {
@@ -219,7 +218,7 @@ class WaveManager(
     }
 
     fun handleMobDeath() {
-        if (!isWaveActive) return // Bloquea ejecuciones fantasma si la oleada ya terminó
+        if (!isWaveActive) return
 
         currentKills++
         activeSpawns--
@@ -295,7 +294,13 @@ class WaveManager(
 
     fun setPlayerAggro(mob: org.bukkit.entity.Mob, player: Player) {
         mob.target = player
-        aggroTimers[mob.uniqueId] = System.currentTimeMillis() + 5000L
+
+        try {
+            mob.pathfinder.moveTo(player)
+        } catch (e: Exception) {
+        }
+
+        aggroTimers[mob.uniqueId] = System.currentTimeMillis() + 8000L
     }
 
     private fun startSwarmAI() {
@@ -326,7 +331,9 @@ class WaveManager(
                         }
 
                         if (entity.ticksLived % 60 == 0) {
-                            entity.pathfinder.moveTo(objectiveEntity)
+                            try {
+                                entity.pathfinder.moveTo(objectiveEntity)
+                            } catch (e: Exception) {}
                         }
                     }
                 }

@@ -32,10 +32,11 @@ class InputListener(private val combatManager: CombatManager) : Listener {
     @EventHandler
     fun onDrop(event: PlayerDropItemEvent) {
         val player = event.player
-        val match = GameManager.getMatchByPlayer(player.uniqueId)
+        val match = GameManager.getMatchByPlayer(player.uniqueId) ?: return
 
-        if (match != null && match.state == MatchState.ACTIVE_WAVE) {
-            event.isCancelled = true
+        event.isCancelled = true
+
+        if (match.state == MatchState.ACTIVE_WAVE) {
             combatManager.executeSkillQ(player)
         }
     }
@@ -43,10 +44,11 @@ class InputListener(private val combatManager: CombatManager) : Listener {
     @EventHandler
     fun onSwapHand(event: PlayerSwapHandItemsEvent) {
         val player = event.player
-        val match = GameManager.getMatchByPlayer(player.uniqueId)
+        val match = GameManager.getMatchByPlayer(player.uniqueId) ?: return
 
-        if (match != null && match.state == MatchState.ACTIVE_WAVE) {
-            event.isCancelled = true
+        event.isCancelled = true
+
+        if (match.state == MatchState.ACTIVE_WAVE) {
             combatManager.executeSkillF(player)
         }
     }
