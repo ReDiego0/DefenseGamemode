@@ -12,7 +12,7 @@ repositories {
     maven("https://repo.papermc.io/repository/maven-public/") {
         name = "papermc-repo"
     }
-    maven("https://repo.extendedclip.com/content/repositories/placeholderapi/")
+    maven("https://repo.extendedclip.com/releases/")
     maven("https://jitpack.io")
     maven("https://maven.enginehub.org/repo/")
 }
@@ -22,6 +22,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("com.github.stefvanschie.inventoryframework:IF:0.11.6")
     compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.9")
+    compileOnly("me.clip:placeholderapi:2.12.2")
 }
 
 tasks {
