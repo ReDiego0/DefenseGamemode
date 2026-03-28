@@ -58,6 +58,14 @@ class YamlStorage(private val plugin: DefenseGamemode) : StorageProvider {
             }
         }
 
+        val claimedClassRewards = mutableMapOf<String, MutableSet<Int>>()
+        val claimedRewardsSec = config.getConfigurationSection("claimedClassRewards")
+        if (claimedRewardsSec != null) {
+            for (key in claimedRewardsSec.getKeys(false)) {
+                claimedClassRewards[key] = claimedRewardsSec.getIntegerList(key).toMutableSet()
+            }
+        }
+
         val unlockedWeapons = mutableMapOf<String, WeaponData>()
         val weaponsSection = config.getConfigurationSection("unlockedWeapons")
         if (weaponsSection != null) {
@@ -77,7 +85,7 @@ class YamlStorage(private val plugin: DefenseGamemode) : StorageProvider {
         val equippedConsumables = config.getStringList("equippedConsumables").toMutableList()
         if (equippedConsumables.isEmpty()) equippedConsumables.addAll(listOf("", ""))
 
-        return PlayerData(uuid, level, exp, kills, missionsCompleted, currentClass, classLevels, classExperience, unlockedClasses, unlockedWeapons, equippedWeapons, equippedArmor, equippedConsumables)
+        return PlayerData(uuid, level, exp, kills, missionsCompleted, currentClass, classLevels, classExperience, unlockedClasses, unlockedWeapons, equippedWeapons, equippedArmor, equippedConsumables, claimedClassRewards)
     }
 
     override fun savePlayer(playerData: PlayerData) {
@@ -93,6 +101,9 @@ class YamlStorage(private val plugin: DefenseGamemode) : StorageProvider {
 
         config.set("classLevels", playerData.classLevels)
         config.set("classExperience", playerData.classExperience)
+
+        val claimedMapForYaml = playerData.claimedClassRewards.mapValues { it.value.toList() }
+        config.set("claimedClassRewards", claimedMapForYaml)
 
         config.set("currentClass", playerData.currentClass)
         config.set("unlockedClasses", playerData.unlockedClasses.toList())
