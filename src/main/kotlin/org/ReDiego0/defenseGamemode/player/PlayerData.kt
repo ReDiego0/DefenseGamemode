@@ -23,7 +23,8 @@ data class PlayerData(
     var equippedWeapons: MutableList<String> = mutableListOf("", "", ""),
     var equippedArmor: MutableList<String> = mutableListOf("", "", "", ""),
     var equippedConsumables: MutableList<String> = mutableListOf("", ""),
-    val claimedClassRewards: MutableMap<String, MutableSet<Int>> = mutableMapOf()
+    val claimedClassRewards: MutableMap<String, MutableSet<Int>> = mutableMapOf(),
+    val bodega: MutableMap<String, Int> = mutableMapOf()
 ) {
     fun addExperience(amount: Double): Boolean {
         experience += amount

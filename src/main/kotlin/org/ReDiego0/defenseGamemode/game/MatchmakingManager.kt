@@ -7,6 +7,8 @@ import org.ReDiego0.defenseGamemode.config.MissionConfig
 import org.ReDiego0.defenseGamemode.config.MissionManager
 import org.ReDiego0.defenseGamemode.player.Party
 import org.ReDiego0.defenseGamemode.player.PartyManager
+import org.ReDiego0.defenseGamemode.player.PlayerDataManager
+import org.ReDiego0.defenseGamemode.utils.EconomyManager
 import org.ReDiego0.defenseGamemode.world.LocalWorldService
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
@@ -16,6 +18,10 @@ import java.util.UUID
 object MatchmakingManager {
 
     private val activeQueues = mutableMapOf<String, LobbyQueue>()
+
+    fun isPlayerInQueue(uuid: UUID): Boolean {
+        return activeQueues.values.any { it.waitingPlayers.contains(uuid) }
+    }
 
     fun joinMap(player: Player, mapName: String) {
         val missionConfig = MissionManager.getMission(mapName)
@@ -41,6 +47,63 @@ object MatchmakingManager {
             val memberName = Bukkit.getPlayer(memberInMatch)?.name ?: "Alguien"
             player.sendMessage("§c$memberName ya está en una partida. Espera a que termine.")
             return
+        }
+
+        val requirements = missionConfig.requirements
+        if (requirements != null) {
+            for (memberUuid in party.members) {
+                val memberData = PlayerDataManager.getPlayerData(memberUuid) ?: continue
+                val memberName = Bukkit.getPlayer(memberUuid)?.name ?: "Un miembro"
+
+                if (memberData.level < requirements.minLevel) {
+                    player.sendMessage("§c$memberName no cumple con el nivel mínimo (${requirements.minLevel}).")
+                    return
+                }
+
+                if (requirements.requiredClass != null && !memberData.currentClass.equals(requirements.requiredClass, true)) {
+                    player.sendMessage("§c$memberName debe tener la clase ${requirements.requiredClass} equipada.")
+                    return
+                }
+
+                if (requirements.maxWeaponSlots != null) {
+                    val equippedCount = memberData.equippedWeapons.count { it.isNotBlank() }
+                    if (equippedCount > requirements.maxWeaponSlots) {
+                        player.sendMessage("§c$memberName supera el límite de armas equipadas (${requirements.maxWeaponSlots}).")
+                        return
+                    }
+                }
+            }
+
+            val leaderData = PlayerDataManager.getPlayerData(player.uniqueId) ?: return
+            val taxiMultiplier = 1.0 + ((party.members.size - 1) * 0.15)
+
+            val finalVaultCost = requirements.vaultCost * taxiMultiplier
+            if (finalVaultCost > 0.0) {
+                if (!EconomyManager.hasEnough(player, finalVaultCost)) {
+                    player.sendMessage("§cNo tienes fondos suficientes. Requieres ${finalVaultCost.toInt()} monedas (incluye tasa de grupo).")
+                    return
+                }
+            }
+
+            for ((itemId, amount) in requirements.itemCosts) {
+                val finalItemCost = (amount * taxiMultiplier).toInt()
+                val currentAmount = leaderData.bodega.getOrDefault(itemId, 0)
+                if (currentAmount < finalItemCost) {
+                    player.sendMessage("§cNo tienes suficientes materiales. Requieres $finalItemCost de $itemId en tu bodega.")
+                    return
+                }
+            }
+
+            if (finalVaultCost > 0.0) {
+                EconomyManager.withdraw(player, finalVaultCost)
+            }
+
+            for ((itemId, amount) in requirements.itemCosts) {
+                val finalItemCost = (amount * taxiMultiplier).toInt()
+                val currentAmount = leaderData.bodega.getOrDefault(itemId, 0)
+                leaderData.bodega[itemId] = currentAmount - finalItemCost
+            }
+            PlayerDataManager.savePlayerAsync(player.uniqueId)
         }
 
         val queue = activeQueues.getOrPut(mapName) { LobbyQueue(mapName, missionConfig) }

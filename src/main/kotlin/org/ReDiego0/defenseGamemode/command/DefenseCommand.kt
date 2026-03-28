@@ -40,6 +40,10 @@ class DefenseCommand : CommandExecutor, TabCompleter {
 
     private fun handleTreeMenu(sender: CommandSender, branch: String) {
         if (sender !is Player) return
+        if (MatchmakingManager.isPlayerInQueue(sender.uniqueId)) {
+            sender.sendMessage("§cNo puedes abrir el árbol mientras buscas partida.")
+            return
+        }
         ProgressionTreeMenu.openTree(sender, branch)
     }
 
@@ -51,16 +55,28 @@ class DefenseCommand : CommandExecutor, TabCompleter {
 
     private fun handleExoticsMenu(sender: CommandSender) {
         if (sender !is Player) return
+        if (MatchmakingManager.isPlayerInQueue(sender.uniqueId)) {
+            sender.sendMessage("§cNo puedes abrir este menú mientras buscas partida.")
+            return
+        }
         org.ReDiego0.defenseGamemode.ui.ExoticMenu.openMainMenu(sender)
     }
 
     private fun handleClassMenu(sender: CommandSender) {
         if (sender !is Player) return
+        if (MatchmakingManager.isPlayerInQueue(sender.uniqueId)) {
+            sender.sendMessage("§cNo puedes abrir este menú mientras buscas partida.")
+            return
+        }
         org.ReDiego0.defenseGamemode.ui.ClassMenu.openMainMenu(sender)
     }
 
     private fun handleLoadoutMenu(sender: CommandSender) {
         if (sender !is Player) return
+        if (MatchmakingManager.isPlayerInQueue(sender.uniqueId)) {
+            sender.sendMessage("§cNo puedes abrir este menú mientras buscas partida.")
+            return
+        }
         org.ReDiego0.defenseGamemode.ui.LoadoutMenu.openLoadout(sender)
     }
 

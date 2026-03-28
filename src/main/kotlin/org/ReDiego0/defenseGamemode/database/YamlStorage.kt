@@ -66,6 +66,14 @@ class YamlStorage(private val plugin: DefenseGamemode) : StorageProvider {
             }
         }
 
+        val bodega = mutableMapOf<String, Int>()
+        val bodegaSec = config.getConfigurationSection("bodega")
+        if (bodegaSec != null) {
+            for (key in bodegaSec.getKeys(false)) {
+                bodega[key] = bodegaSec.getInt(key)
+            }
+        }
+
         val unlockedWeapons = mutableMapOf<String, WeaponData>()
         val weaponsSection = config.getConfigurationSection("unlockedWeapons")
         if (weaponsSection != null) {
@@ -85,7 +93,7 @@ class YamlStorage(private val plugin: DefenseGamemode) : StorageProvider {
         val equippedConsumables = config.getStringList("equippedConsumables").toMutableList()
         if (equippedConsumables.isEmpty()) equippedConsumables.addAll(listOf("", ""))
 
-        return PlayerData(uuid, level, exp, kills, missionsCompleted, currentClass, classLevels, classExperience, unlockedClasses, unlockedWeapons, equippedWeapons, equippedArmor, equippedConsumables, claimedClassRewards)
+        return PlayerData(uuid, level, exp, kills, missionsCompleted, currentClass, classLevels, classExperience, unlockedClasses, unlockedWeapons, equippedWeapons, equippedArmor, equippedConsumables, claimedClassRewards, bodega)
     }
 
     override fun savePlayer(playerData: PlayerData) {
@@ -104,6 +112,8 @@ class YamlStorage(private val plugin: DefenseGamemode) : StorageProvider {
 
         val claimedMapForYaml = playerData.claimedClassRewards.mapValues { it.value.toList() }
         config.set("claimedClassRewards", claimedMapForYaml)
+
+        config.set("bodega", playerData.bodega)
 
         config.set("currentClass", playerData.currentClass)
         config.set("unlockedClasses", playerData.unlockedClasses.toList())

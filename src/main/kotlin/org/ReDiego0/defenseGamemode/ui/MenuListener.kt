@@ -2,6 +2,7 @@ package org.ReDiego0.defenseGamemode.ui
 
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import org.ReDiego0.defenseGamemode.combat.PlayerClass
+import org.ReDiego0.defenseGamemode.game.MatchmakingManager
 import org.ReDiego0.defenseGamemode.player.PlayerDataManager
 import org.ReDiego0.defenseGamemode.player.progression.ProgressionManager
 import org.ReDiego0.defenseGamemode.player.progression.RewardType
@@ -27,6 +28,13 @@ class MenuListener : Listener {
 
 
             event.isCancelled = true
+
+            if (MatchmakingManager.isPlayerInQueue(player.uniqueId)) {
+                player.playSound(player.location, Sound.ENTITY_VILLAGER_NO, 1f, 1f)
+                player.sendMessage("§cNo puedes modificar tu equipamiento mientras buscas partida.")
+                player.closeInventory()
+                return
+            }
 
             val clickedItem = event.currentItem ?: return
             if (!clickedItem.hasItemMeta() || clickedItem.itemMeta.displayName.isBlank()) return

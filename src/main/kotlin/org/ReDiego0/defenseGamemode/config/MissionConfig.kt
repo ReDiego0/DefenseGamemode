@@ -15,6 +15,14 @@ data class Reward(
     val baseValue: Double
 )
 
+data class MissionRequirements(
+    val minLevel: Int = 1,
+    val requiredClass: String? = null,
+    val maxWeaponSlots: Int? = null,
+    val vaultCost: Double = 0.0,
+    val itemCosts: Map<String, Int> = emptyMap()
+)
+
 data class MissionConfig(
     val id: String,
     val displayName: String,
@@ -30,7 +38,8 @@ data class MissionConfig(
     val spawnRadius: Double,
     val targetLocation: CustomLocation,
     val mobSpawns: List<CustomLocation>,
-    val rewards: List<Reward>
+    val rewards: List<Reward>,
+    val requirements: MissionRequirements? = null
 )
 
 data class CustomLocation(

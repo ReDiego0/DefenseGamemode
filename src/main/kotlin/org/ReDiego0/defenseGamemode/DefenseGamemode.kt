@@ -12,6 +12,7 @@ import org.ReDiego0.defenseGamemode.player.PlayerDataListener
 import org.ReDiego0.defenseGamemode.player.PlayerDataManager
 import org.ReDiego0.defenseGamemode.setup.SetupListener
 import org.ReDiego0.defenseGamemode.ui.MenuListener
+import org.ReDiego0.defenseGamemode.utils.EconomyManager
 import org.ReDiego0.defenseGamemode.world.LocalWorldService
 import org.bukkit.Bukkit
 import org.bukkit.plugin.java.JavaPlugin
@@ -24,7 +25,7 @@ class DefenseGamemode : JavaPlugin() {
 
     lateinit var cooldownManager: CooldownManager
         private set
-    lateinit var combatManager: org.ReDiego0.defenseGamemode.combat.manager.CombatManager
+    lateinit var combatManager: CombatManager
         private set
 
     override fun onEnable() {
@@ -33,6 +34,7 @@ class DefenseGamemode : JavaPlugin() {
 
         cooldownManager = CooldownManager()
         combatManager = CombatManager(this)
+        EconomyManager.setupEconomy()
 
         LocalWorldService.initialize(this)
         PlayerDataManager.initialize(this)
