@@ -4,6 +4,7 @@ import org.ReDiego0.defenseGamemode.game.MatchmakingManager
 import org.ReDiego0.defenseGamemode.player.PartyManager
 import org.ReDiego0.defenseGamemode.player.PlayerDataManager
 import org.ReDiego0.defenseGamemode.setup.SetupManager
+import org.ReDiego0.defenseGamemode.ui.ProgressionTreeMenu
 import org.bukkit.Bukkit
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
@@ -30,9 +31,16 @@ class DefenseCommand : CommandExecutor, TabCompleter {
             "exotics" -> handleExoticsMenu(sender)
             "level" -> handleLevel(sender, args)
             "forcestart" -> handleForceStart(sender, args)
+            "equipamiento" -> handleTreeMenu(sender, "equipamiento")
+            "habilidades" -> handleTreeMenu(sender, "habilidades")
             else -> sendHelp(sender)
         }
         return true
+    }
+
+    private fun handleTreeMenu(sender: CommandSender, branch: String) {
+        if (sender !is Player) return
+        ProgressionTreeMenu.openTree(sender, branch)
     }
 
     private fun handleForceStart(sender: CommandSender, args: Array<out String>) {

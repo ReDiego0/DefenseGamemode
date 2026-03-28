@@ -22,7 +22,8 @@ data class PlayerData(
     val unlockedWeapons: MutableMap<String, WeaponData> = mutableMapOf(),
     var equippedWeapons: MutableList<String> = mutableListOf("", "", ""),
     var equippedArmor: MutableList<String> = mutableListOf("", "", "", ""),
-    var equippedConsumables: MutableList<String> = mutableListOf("", "")
+    var equippedConsumables: MutableList<String> = mutableListOf("", ""),
+    val claimedClassRewards: MutableMap<String, MutableSet<Int>> = mutableMapOf()
 ) {
     fun addExperience(amount: Double): Boolean {
         experience += amount

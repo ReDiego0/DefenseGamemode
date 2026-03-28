@@ -3,6 +3,9 @@ package org.ReDiego0.defenseGamemode.ui
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import org.ReDiego0.defenseGamemode.combat.PlayerClass
 import org.ReDiego0.defenseGamemode.player.PlayerDataManager
+import org.ReDiego0.defenseGamemode.player.progression.ProgressionManager
+import org.ReDiego0.defenseGamemode.player.progression.RewardType
+import org.bukkit.Bukkit
 import org.bukkit.Sound
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -22,6 +25,7 @@ class MenuListener : Listener {
             title.contains("Seleccionar Armadura") || title.contains("Seleccionar Consumible") ||
             title.contains("Categorías Exóticas") || title.contains("Armas Exóticas")) {
 
+
             event.isCancelled = true
 
             val clickedItem = event.currentItem ?: return
@@ -30,7 +34,59 @@ class MenuListener : Listener {
             val itemName = clickedItem.itemMeta.displayName
             val data = PlayerDataManager.getPlayerData(player.uniqueId) ?: return
 
-            if (title.contains("Seleccionar Clase")) {
+            if (title.contains("Árbol de ")) {
+                val branch = if (title.contains("Equipamiento")) "equipamiento" else "habilidades"
+                val slot = event.rawSlot
+
+                val levelIndex = ProgressionTreeMenu.SNAKE_SLOTS.indexOf(slot)
+                if (levelIndex == -1) return
+
+                val level = levelIndex + 1
+                val classId = data.currentClass
+                val currentLevel = data.getClassLevel(classId)
+                val reward = ProgressionManager.getReward(classId, branch, level) ?: return
+
+                val claimedKey = "${classId}_$branch"
+                val claimedSet = data.claimedClassRewards.getOrPut(claimedKey) { mutableSetOf() }
+
+                if (claimedSet.contains(level)) {
+                    player.playSound(player.location, Sound.ENTITY_VILLAGER_NO, 1f, 1f)
+                    player.sendMessage("§cYa has reclamado esta recompensa.")
+                    return
+                }
+
+                if (currentLevel < level) {
+                    player.playSound(player.location, Sound.ENTITY_VILLAGER_NO, 1f, 1f)
+                    player.sendMessage("§cTu clase no tiene el nivel suficiente ($level) para desbloquear esto.")
+                    return
+                }
+
+                when (reward.type) {
+                    RewardType.WEAPON_UNLOCK -> {
+                        reward.id?.let { data.unlockedWeapons[it] = org.ReDiego0.defenseGamemode.player.WeaponData(it) }
+                    }
+
+                    RewardType.COMMAND -> {
+                        reward.command?.let {
+                            val parsed = it.replace("{player}", player.name)
+                            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), parsed)
+                        }
+                    }
+
+                    else -> {}
+                }
+
+                claimedSet.add(level)
+                PlayerDataManager.savePlayerAsync(player.uniqueId)
+
+                player.playSound(player.location, Sound.ENTITY_PLAYER_LEVELUP, 1f, 2f)
+                player.sendMessage("§a¡Has desbloqueado: ${reward.displayName}§a!")
+
+                ProgressionTreeMenu.openTree(player, branch)
+                return
+
+
+            } else if (title.contains("Seleccionar Clase")) {
                 val selectedClass = PlayerClass.entries.find { itemName.contains(it.displayName) } ?: return
 
                 if (data.unlockedClasses.contains(selectedClass.id)) {
