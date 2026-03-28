@@ -13,6 +13,7 @@ import org.ReDiego0.defenseGamemode.player.PlayerDataManager
 import org.ReDiego0.defenseGamemode.setup.SetupListener
 import org.ReDiego0.defenseGamemode.ui.MenuListener
 import org.ReDiego0.defenseGamemode.world.LocalWorldService
+import org.bukkit.Bukkit
 import org.bukkit.plugin.java.JavaPlugin
 
 class DefenseGamemode : JavaPlugin() {
@@ -39,6 +40,11 @@ class DefenseGamemode : JavaPlugin() {
         loadManagers()
         loadEvents()
         loadCommands()
+
+        if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            DefenseExpansion().register()
+            logger.info("¡PlaceholderAPI conectado exitosamente!")
+        }
 
         logger.info("DefenseGamemode habilitado correctamente!")
     }

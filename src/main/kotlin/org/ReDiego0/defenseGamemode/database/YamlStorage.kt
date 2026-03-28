@@ -42,6 +42,22 @@ class YamlStorage(private val plugin: DefenseGamemode) : StorageProvider {
             }
         }
 
+        val classLevels = mutableMapOf<String, Int>()
+        val classLevelsSec = config.getConfigurationSection("classLevels")
+        if (classLevelsSec != null) {
+            for (key in classLevelsSec.getKeys(false)) {
+                classLevels[key] = classLevelsSec.getInt(key)
+            }
+        }
+
+        val classExperience = mutableMapOf<String, Double>()
+        val classExpSec = config.getConfigurationSection("classExperience")
+        if (classExpSec != null) {
+            for (key in classExpSec.getKeys(false)) {
+                classExperience[key] = classExpSec.getDouble(key)
+            }
+        }
+
         val unlockedWeapons = mutableMapOf<String, WeaponData>()
         val weaponsSection = config.getConfigurationSection("unlockedWeapons")
         if (weaponsSection != null) {
@@ -61,7 +77,7 @@ class YamlStorage(private val plugin: DefenseGamemode) : StorageProvider {
         val equippedConsumables = config.getStringList("equippedConsumables").toMutableList()
         if (equippedConsumables.isEmpty()) equippedConsumables.addAll(listOf("", ""))
 
-        return PlayerData(uuid, level, exp, kills, missionsCompleted, currentClass, unlockedClasses, unlockedWeapons, equippedWeapons, equippedArmor, equippedConsumables)
+        return PlayerData(uuid, level, exp, kills, missionsCompleted, currentClass, classLevels, classExperience, unlockedClasses, unlockedWeapons, equippedWeapons, equippedArmor, equippedConsumables)
     }
 
     override fun savePlayer(playerData: PlayerData) {
@@ -74,6 +90,9 @@ class YamlStorage(private val plugin: DefenseGamemode) : StorageProvider {
 
         val missionsStringKeys = playerData.missionsCompleted.mapKeys { it.key.toString() }
         config.set("missionsCompleted", missionsStringKeys)
+
+        config.set("classLevels", playerData.classLevels)
+        config.set("classExperience", playerData.classExperience)
 
         config.set("currentClass", playerData.currentClass)
         config.set("unlockedClasses", playerData.unlockedClasses.toList())

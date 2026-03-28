@@ -16,6 +16,8 @@ data class PlayerData(
     var totalKills: Int = 0,
     val missionsCompleted: MutableMap<Int, Int> = mutableMapOf(),
     var currentClass: String = "iniciado",
+    val classLevels: MutableMap<String, Int> = mutableMapOf(),
+    val classExperience: MutableMap<String, Double> = mutableMapOf(),
     val unlockedClasses: MutableSet<String> = mutableSetOf("iniciado"),
     val unlockedWeapons: MutableMap<String, WeaponData> = mutableMapOf(),
     var equippedWeapons: MutableList<String> = mutableListOf("", "", ""),
@@ -39,6 +41,35 @@ data class PlayerData(
             checkClassUnlocks()
         }
         return leveledUp
+    }
+
+    fun addClassExperience(classId: String, amount: Double): Boolean {
+        val currentExp = classExperience.getOrDefault(classId, 0.0) + amount
+        classExperience[classId] = currentExp
+        return checkClassLevelUp(classId)
+    }
+
+    private fun checkClassLevelUp(classId: String): Boolean {
+        var leveledUp = false
+        var currentLevel = classLevels.getOrDefault(classId, 1)
+        var requiredExp = getClassRequiredExp(currentLevel)
+
+        while (classExperience.getOrDefault(classId, 0.0) >= requiredExp && currentLevel < 18) {
+            classExperience[classId] = classExperience.getOrDefault(classId, 0.0) - requiredExp
+            currentLevel++
+            classLevels[classId] = currentLevel
+            requiredExp = getClassRequiredExp(currentLevel)
+            leveledUp = true
+        }
+        return leveledUp
+    }
+
+    fun getClassLevel(classId: String): Int {
+        return classLevels.getOrDefault(classId, 1)
+    }
+
+    fun getClassRequiredExp(currentLevel: Int): Double {
+        return 5000.0 * currentLevel + (currentLevel * currentLevel * 800.0)
     }
 
     fun checkClassUnlocks() {

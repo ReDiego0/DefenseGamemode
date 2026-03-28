@@ -31,6 +31,8 @@ class MySQLStorage(
                     "totalKills INT NOT NULL," +
                     "missionsCompleted TEXT," +
                     "currentClass VARCHAR(32) NOT NULL DEFAULT 'iniciado'," +
+                    "classLevels TEXT," +
+                    "classExperience TEXT," +
                     "unlockedClasses TEXT NOT NULL," +
                     "unlockedWeapons TEXT," +
                     "equippedWeapons TEXT," +
@@ -55,27 +57,33 @@ class MySQLStorage(
             if (unlockedClasses.isEmpty()) unlockedClasses.add("iniciado")
 
             val missionsType = object : TypeToken<MutableMap<Int, Int>>() {}.type
+            val classLevelsType = object : TypeToken<MutableMap<String, Int>>() {}.type
+            val classExpType = object : TypeToken<MutableMap<String, Double>>() {}.type
             val mapType = object : TypeToken<MutableMap<String, WeaponData>>() {}.type
             val listType = object : TypeToken<MutableList<String>>() {}.type
 
             val missionsCompleted: MutableMap<Int, Int> = gson.fromJson(rs.getString("missionsCompleted") ?: "{}", missionsType) ?: mutableMapOf()
+            val classLevels: MutableMap<String, Int> = gson.fromJson(rs.getString("classLevels") ?: "{}", classLevelsType) ?: mutableMapOf()
+            val classExperience: MutableMap<String, Double> = gson.fromJson(rs.getString("classExperience") ?: "{}", classExpType) ?: mutableMapOf()
             val unlockedWeapons: MutableMap<String, WeaponData> = gson.fromJson(rs.getString("unlockedWeapons") ?: "{}", mapType) ?: mutableMapOf()
             val equippedWeapons: MutableList<String> = gson.fromJson(rs.getString("equippedWeapons") ?: "[\"\",\"\",\"\"]", listType) ?: mutableListOf("", "", "")
             val equippedArmor: MutableList<String> = gson.fromJson(rs.getString("equippedArmor") ?: "[\"\",\"\",\"\",\"\"]", listType) ?: mutableListOf("", "", "", "")
             val equippedConsumables: MutableList<String> = gson.fromJson(rs.getString("equippedConsumables") ?: "[\"\",\"\"]", listType) ?: mutableListOf("", "")
 
-            return PlayerData(uuid, level, exp, kills, missionsCompleted, currentClass, unlockedClasses, unlockedWeapons, equippedWeapons, equippedArmor, equippedConsumables)
+            return PlayerData(uuid, level, exp, kills, missionsCompleted, currentClass, classLevels, classExperience, unlockedClasses, unlockedWeapons, equippedWeapons, equippedArmor, equippedConsumables)
         }
         return PlayerData(uuid)
     }
 
     override fun savePlayer(playerData: PlayerData) {
         val statement = connection?.prepareStatement(
-            "INSERT INTO player_data (uuid, level, experience, totalKills, missionsCompleted, currentClass, unlockedClasses, unlockedWeapons, equippedWeapons, equippedArmor, equippedConsumables) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
-                    "ON DUPLICATE KEY UPDATE level = ?, experience = ?, totalKills = ?, missionsCompleted = ?, currentClass = ?, unlockedClasses = ?, unlockedWeapons = ?, equippedWeapons = ?, equippedArmor = ?, equippedConsumables = ?"
+            "INSERT INTO player_data (uuid, level, experience, totalKills, missionsCompleted, currentClass, classLevels, classExperience, unlockedClasses, unlockedWeapons, equippedWeapons, equippedArmor, equippedConsumables) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
+                    "ON DUPLICATE KEY UPDATE level = ?, experience = ?, totalKills = ?, missionsCompleted = ?, currentClass = ?, classLevels = ?, classExperience = ?, unlockedClasses = ?, unlockedWeapons = ?, equippedWeapons = ?, equippedArmor = ?, equippedConsumables = ?"
         )
         val missionsJson = gson.toJson(playerData.missionsCompleted)
+        val classLevelsJson = gson.toJson(playerData.classLevels)
+        val classExpJson = gson.toJson(playerData.classExperience)
         val weaponsJson = gson.toJson(playerData.unlockedWeapons)
         val eqWeaponsJson = gson.toJson(playerData.equippedWeapons)
         val eqArmorJson = gson.toJson(playerData.equippedArmor)
@@ -87,22 +95,26 @@ class MySQLStorage(
         statement?.setInt(4, playerData.totalKills)
         statement?.setString(5, missionsJson)
         statement?.setString(6, playerData.currentClass)
-        statement?.setString(7, playerData.unlockedClasses.joinToString(","))
-        statement?.setString(8, weaponsJson)
-        statement?.setString(9, eqWeaponsJson)
-        statement?.setString(10, eqArmorJson)
-        statement?.setString(11, eqConsumablesJson)
+        statement?.setString(7, classLevelsJson)
+        statement?.setString(8, classExpJson)
+        statement?.setString(9, playerData.unlockedClasses.joinToString(","))
+        statement?.setString(10, weaponsJson)
+        statement?.setString(11, eqWeaponsJson)
+        statement?.setString(12, eqArmorJson)
+        statement?.setString(13, eqConsumablesJson)
 
-        statement?.setInt(12, playerData.level)
-        statement?.setDouble(13, playerData.experience)
-        statement?.setInt(14, playerData.totalKills)
-        statement?.setString(15, missionsJson)
-        statement?.setString(16, playerData.currentClass)
-        statement?.setString(17, playerData.unlockedClasses.joinToString(","))
-        statement?.setString(18, weaponsJson)
-        statement?.setString(19, eqWeaponsJson)
-        statement?.setString(20, eqArmorJson)
-        statement?.setString(21, eqConsumablesJson)
+        statement?.setInt(14, playerData.level)
+        statement?.setDouble(15, playerData.experience)
+        statement?.setInt(16, playerData.totalKills)
+        statement?.setString(17, missionsJson)
+        statement?.setString(18, playerData.currentClass)
+        statement?.setString(19, classLevelsJson)
+        statement?.setString(20, classExpJson)
+        statement?.setString(21, playerData.unlockedClasses.joinToString(","))
+        statement?.setString(22, weaponsJson)
+        statement?.setString(23, eqWeaponsJson)
+        statement?.setString(24, eqArmorJson)
+        statement?.setString(25, eqConsumablesJson)
 
         statement?.executeUpdate()
     }
